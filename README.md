@@ -68,10 +68,14 @@ AI が黒板や手書き看板の文字を読み取り、工事写真台帳の�
 
 ### 出力
 
-- **Excel（.xlsx）** — 発注者ごとに異なる台帳書式に対応するため、テンプレート差し込み方式を採用予定
-- **PDF** — 提出・印刷用。1 ページあたりの写真枚数を 1 / 3 / 4 / 6 枚から選択できます
-- **Word（.docx）** — 説明文書中心の報告書向け
-- **電子納品（CALS/EC）** — `PHOTO/PIC`・`PHOTO/DRA` 構成、`PHOTO.XML` の出力
+- **Excel（.xlsx）** — 既定の台帳書式で出力できるほか、発注者指定の `.xlsx` 雛形に
+  `{{工事名}}` 形式のプレースホルダを書いておけば、その書式のまま差し込めます。
+  発注者ごとに台帳の書式が違うため、書式を固定しない設計にしています
+- **PDF** — 提出・印刷用。1 ページあたりの写真枚数を 1 / 3 / 4 / 6 枚から選択できます。
+  Chromium の印刷機能で生成するため、日本語の禁則処理・字詰めが崩れません
+- **電子納品（CALS/EC）** — `PHOTO/PIC`・`PHOTO/DRA` 構成、`PHOTO.XML`（Shift_JIS）を
+  ZIP で出力します。署名が検証できない写真が含まれる場合は出力を停止します
+- **Word（.docx）** — 未実装
 
 ---
 
@@ -152,7 +156,18 @@ npm run db:migrate
 npm run dev
 ```
 
-<http://localhost:3000> で起動します。
+<http://localhost:3000> で起動します（`127.0.0.1` ではなく `localhost` を使ってください）。
+
+### 補足：データベースなしで保護画面を確認する
+
+実データベースを立てる前に画面や API を確認したい場合、検証用のセッション
+トークンを発行できます（開発環境専用）。
+
+```bash
+TOKEN=$(node scripts/dev-session-token.mjs)
+curl -b "authjs.session-token=$TOKEN" \
+  "http://localhost:3000/api/projects/project-1/export/pdf?perPage=4" -o 台帳.pdf
+```
 
 ---
 
@@ -210,12 +225,21 @@ npm run db:studio     # Drizzle Studio を起動
 ## テスト
 
 ```bash
-npm test         # テスト実行
+npm test           # ユニットテスト（41 件）
 npm run typecheck  # 型チェック
 npm run lint       # Lint
+npm run smoke      # 画面操作のスモークテスト（要: サーバー起動 + Chrome）
 ```
 
-現在のテストは写真処理まわりを対象としています。
+`npm run smoke` は実際のブラウザで画面を操作し、黒板エディタの編集・写真の選択・
+台帳の枚数切替・電子納品の適合チェックなどが動作することを確認します。
+
+> **注意**
+> 開発サーバーには必ず `http://localhost:3000` でアクセスしてください。
+> `127.0.0.1` だと HMR の WebSocket が接続できず、React のハイドレーションが
+> 行われないため、画面上のすべての操作が無反応になります。
+
+ユニットテストは写真処理と出力処理を対象としています。
 特に **EXIF の撮影日時の扱い** は重点的に検証しています。
 
 EXIF の日時にはタイムゾーン情報がありません。
@@ -299,16 +323,22 @@ await requireProjectCapability(userId, projectId, 'photo.delete');
 - 認証（Auth.js v5、資格情報によるログイン、ルート保護）
 - EXIF 解析（撮影日時・GPS・向き）とテスト
 - 画像処理（ハッシュ・サムネイル・表示用画像・有効画素数判定）とテスト
-- 電子小黒板テンプレートエディタ
+- 電子小黒板テンプレートエディタ（動作確認済み）
 - S3 互換ストレージ層
+- **Excel 出力**（既定書式＋発注者雛形への差し込み）
+- **PDF 出力**（1/3/4/6 枚組、日本語組版）
+- **電子納品出力**（PHOTO.XML／Shift_JIS、PIC・DRA 構成、適合チェック付き）
+- 出力 API（`/api/projects/[projectId]/export/[format]`）と監査ログ記録
+- 画面操作のスモークテスト（`npm run smoke`、16 項目）
 
 ### 未実装
 
 - 画面から実データベースへの接続（現在は `src/lib/demo-data.ts` の表示用データを参照）
+  - 差し替え箇所は `src/lib/export/ledger-source.ts` の 2 関数に集約しています
 - 写真アップロードの API 実装
-- Excel / PDF / Word の実出力処理
-- 電子納品 ZIP の生成
+- Word（.docx）出力
 - 手書き看板の OCR 処理本体
+- メンバー招待・共有リンク発行の実処理（権限モデル自体は実装済み）
 - スマートフォン用の撮影アプリ（別途 React Native / Expo で実装予定）
 
 > **撮影アプリについて**
