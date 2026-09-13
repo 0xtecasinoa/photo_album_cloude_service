@@ -1,0 +1,81 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens extracted from the Figma file
+ * "Construction Photo Album Cloud Service" (らくらく写真台帳).
+ * Values are read from the Figma node tree, not eyeballed from renders.
+ */
+@theme {
+  /* Brand navy — sidebar, primary buttons, headings */
+  --color-brand: #1e3a8b;
+  --color-brand-hover: #17306f;
+  --color-brand-soft: #1f65b7;
+  --color-brand-tint: #eef2fb;
+  --color-brand-ring: #3b82f6;
+  --color-brand-link: #2e80e0;
+
+  /* Gold accent — plan CTA, bold toggle, highlight bar */
+  --color-accent: #f0ae1e;
+  --color-accent-hover: #d99a13;
+
+  /* Success / AI-extracted data */
+  --color-success: #2e7e61;
+  --color-success-tint: #e0efe9;
+
+  --color-danger: #ff0004;
+  --color-danger-tint: #fdeced;
+
+  /* 電子小黒板 */
+  --color-board: #132a22;
+  --color-board-label: #8eff9f;
+  --color-board-border: #f0ae1e;
+
+  /* Neutrals */
+  --color-surface: #ffffff;
+  --color-surface-muted: #fafafa;
+  --color-surface-sunken: #f4f6fa;
+  --color-border: #d9d9d9;
+  --color-border-subtle: #e8ecf3;
+  --color-ink: #1e1e1e;
+  --color-ink-muted: #999999;
+  --color-ink-faint: #b3b3b3;
+
+  --font-sans: var(--font-zen-kaku), 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, system-ui, sans-serif;
+
+  --radius-card: 10px;
+  --radius-pill: 30px;
+  --radius-field: 8px;
+}
+
+/*
+ * The design's line heights are a consistent 1.45x the font size, which is what
+ * keeps dense Japanese UI text readable. Encoded once rather than per-component.
+ */
+html {
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+/* Tabular figures keep 撮影日時 and storage counters from jittering. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sidebar nav labels in the design are letter-spaced noticeably wider. */
+.tracking-nav {
+  letter-spacing: 0.08em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

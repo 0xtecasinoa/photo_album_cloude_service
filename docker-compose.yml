@@ -1,0 +1,60 @@
+# Local development infrastructure.
+# Production uses managed Postgres and S3/R2 — this file is dev-only.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: cpc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cpc
+      POSTGRES_PASSWORD: cpc_dev_password
+      POSTGRES_DB: construction_photo_cloud
+      # Japanese collation for correct ordering of 工事名 in list views
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C'
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U cpc -d construction_photo_cloud']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # S3-compatible object storage. Swap for S3 or Cloudflare R2 in production.
+  minio:
+    image: minio/minio:latest
+    container_name: cpc-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - '9000:9000'   # API
+      - '9001:9001'   # Console
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Creates the bucket on first boot so the app has somewhere to write.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc mb --ignore-existing local/construction-photos;
+      mc anonymous set none local/construction-photos;
+      echo 'bucket ready';
+      "
+
+volumes:
+  pgdata:
+  miniodata:

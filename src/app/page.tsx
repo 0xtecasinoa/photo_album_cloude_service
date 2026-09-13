@@ -1,0 +1,495 @@
+import type { Metadata } from 'next';
+import Image from 'next/image';
+import Link from 'next/link';
+import {
+  Timer, Wallet, HardHat, Check, ChevronsRight, ShieldCheck, Share2, Clock,
+  Camera, Cloud, Sparkles, FileSpreadsheet, FileOutput, UserRoundCog, Building, Landmark,
+} from 'lucide-react';
+import { SiteHeader } from '@/components/marketing/site-header';
+import { SiteFooter } from '@/components/marketing/site-footer';
+import { ChalkBoard } from '@/components/marketing/chalk-board';
+import { Faq } from '@/components/marketing/faq';
+
+export const metadata: Metadata = {
+  title: '写真を撮るだけ。あとの1分は、台帳が自動で仕上げます。',
+  description:
+    '現場で撮ってボタンひとつ。黒板の内容をAIが読み取り、工事写真台帳のフォーマットへ自動で流し込みます。電子小黒板・権限共有・電子納品まで、ひとつのクラウドで完結。',
+};
+
+/** Gold marker-pen highlight used behind key phrases throughout the design. */
+function Mark({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="from-accent/70 to-accent/70 bg-gradient-to-b from-[62%] to-[62%] bg-[length:100%_100%] px-1">
+      {children}
+    </span>
+  );
+}
+
+function SectionTag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="border-brand-ring/40 text-brand mx-auto mb-6 block w-fit rounded-[30px] border bg-white px-6 py-2 text-[12px] font-medium">
+      {children}
+    </span>
+  );
+}
+
+const BENEFITS = [
+  { icon: Timer, title: '1分で自動作成', body: '撮影後、その場ですぐに台帳が完成' },
+  { icon: Wallet, title: '残業・人件費を削減', body: '事務所に戻っての台帳作業が不要に' },
+  { icon: HardHat, title: '現場管理に時間を', body: '浮いた時間を安全・品質確認へ' },
+];
+
+const STEPS = [
+  { n: '01', title: '現場で写真を撮る', body: 'いつも通りアプリで撮影するだけ。黒板の情報もそのまま読み取ります。' },
+  { n: '02', title: 'ボタンを押すだけ', body: 'フォーマットの選択や項目入力は不要。ワンタップで自動生成が始まります。' },
+  { n: '03', title: '約1分で台帳が完成', body: 'そのまま社内共有・提出用フォーマットとして書き出せます。' },
+];
+
+const SHARING = [
+  { icon: UserRoundCog, title: '事務所で確認・管理', body: '整理・台帳作成の権限（管理者／台帳担当）' },
+  { icon: Share2, title: '協力会社とも共有', body: '6桁コードで一時参加。権限は撮影のみなど絞られます' },
+  { icon: ShieldCheck, title: '関係者もすぐに確認', body: '写真・データを見るだけの権限で参加' },
+];
+
+const WORKFLOW = [
+  { n: '01', title: '撮影', body: '電子黒板付きで現場写真を撮影', icon: Camera },
+  { n: '02', title: 'クラウド同期', body: '撮影した写真をクラウドへ自動同期', icon: Cloud },
+  { n: '03', title: 'AI解析', body: 'AIが電子黒板の文字を自動認識', icon: Sparkles },
+  { n: '04', title: '台帳作成', body: '写真台帳を自動で作成', icon: FileSpreadsheet },
+  { n: '05', title: '帳票出力', body: 'PDF・EXCEL形式で簡単出力', icon: FileOutput },
+];
+
+const PROMISES = [
+  { icon: ShieldCheck, label: '安全・安心' },
+  { icon: Share2, label: 'リアルタイム共有' },
+  { icon: Clock, label: '作業時間を削減' },
+  { icon: HardHat, label: '建設業向け設計' },
+];
+
+const AUDIENCES = [
+  {
+    icon: HardHat,
+    tone: 'bg-brand-ring/15 text-brand',
+    lead: '現場監督の方へ,',
+    title: '現場での撮影・記録をもっと簡単に',
+    points: [
+      '電子黒板付きでその場で正確に記録',
+      'オフラインでも使えるから、圏外の現場でも安心',
+      '撮影した写真は自動で整理され、事務作業を削減',
+    ],
+    recommend: ['現場での撮影・記録を効率化したい', '事務作業の時間を減らしたい'],
+  },
+  {
+    icon: Building,
+    tone: 'bg-success-tint text-success',
+    lead: '中小建設会社向け,',
+    title: '少人数でも効率的に、確実な業務管理を',
+    points: [
+      'クラウドで情報を一元管理、共有もスムーズ',
+      '台帳作成を自動化し、少人数でも業務が回る',
+      '導入しやすく、コストパフォーマンスも抜群',
+    ],
+    recommend: ['人手不足でも業務を効率化したい', 'コストを抑えながらデジタル化を進めたい'],
+  },
+  {
+    icon: Landmark,
+    tone: 'bg-accent/15 text-accent',
+    lead: '大手企業の導入にも対応,',
+    title: '大規模プロジェクトの厳しい要件にも対応',
+    points: [
+      '大規模案件のデータ管理・権限設定に対応',
+      '電子納品基準に準拠し、セキュリティも万全',
+      '導入支援・運用サポートも充実',
+    ],
+    recommend: ['大規模プロジェクトの管理を効率化したい', 'セキュリティやコンプライアンスを重視したい'],
+  },
+];
+
+const BOARD_ROWS = [
+  { label: '工事名', value: '〇〇ビル新築工事' },
+  { label: '工種', value: '鉄筋工事' },
+  { label: '測点', value: 'R階 X3-Y5' },
+  { label: '内容', value: '配筋状況' },
+  { label: '日付', value: '2026/07/28' },
+];
+
+export default function LandingPage() {
+  return (
+    <>
+      <SiteHeader />
+
+      <main>
+        {/* ---------- Hero ---------- */}
+        <section className="relative isolate min-h-[620px] overflow-hidden lg:min-h-[860px]">
+          <Image
+            src="/brand/lp-hero.webp"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="-z-10 object-cover object-center"
+          />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#0B1849]/85 via-[#0B1849]/45 to-transparent" />
+
+          <div className="mx-auto max-w-[1440px] px-6 pt-[180px] pb-24 lg:px-10 lg:pt-[190px]">
+            <div className="max-w-[620px]">
+              <h1 className="text-[34px] leading-[1.35] font-bold text-white sm:text-[44px] lg:text-[52px]">
+                写真を撮るだけ。
+                <br />
+                あとの<span className="text-accent text-[1.25em]">1</span>分は、台帳が自動
+                <br />
+                で仕上げます。
+              </h1>
+
+              <p className="mt-8 max-w-[540px] text-[14px] leading-[2] text-white/95 sm:text-[15px]">
+                現場で撮ってボタンひとつ。黒板の内容を読み取り、工事写真台帳のフォーマットに自動で流し込みます。書類作成の時間を、現場の安全管理・品質管理にまわしましょう。
+              </p>
+
+              <div className="mt-10 flex flex-wrap gap-4">
+                <Link
+                  href="/signup"
+                  className="bg-accent hover:bg-accent-hover rounded-[8px] px-8 py-4 text-[15px] font-bold text-white transition-colors"
+                >
+                  無料デモを試してみる　→
+                </Link>
+                <a
+                  href="#how"
+                  className="bg-accent hover:bg-accent-hover rounded-[8px] px-8 py-4 text-[15px] font-bold text-white transition-colors"
+                >
+                  3ステップを見る　→
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- Why ---------- */}
+        <section id="issues" className="bg-brand text-white">
+          <div className="mx-auto max-w-[1240px] px-6 py-20 lg:px-10">
+            <p className="mb-6 text-[13px] text-white/75">選ばれる理由</p>
+            <div className="grid gap-10 lg:grid-cols-2 lg:gap-20">
+              <h2 className="text-[26px] leading-[1.6] font-bold sm:text-[32px]">
+                撮るから出すまで、ひとつの
+                <br />
+                クラ<span className="text-accent">ウドで完結する</span>から。
+              </h2>
+              <p className="text-[14px] leading-[2.1] text-white/90">
+                台帳ソフトはすでにある。けれど、日時が抜ける、手書きは結局手入力、クラウドと台帳が別扱い——そんな「痒い所」が積み重なっていた。本サービスは、そこに正面から手を入れた工事写真台帳クラウドです。
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-surface-muted">
+          <div className="mx-auto grid max-w-[1240px] gap-10 px-6 py-16 md:grid-cols-3 md:divide-x md:divide-border-subtle lg:px-10">
+            {BENEFITS.map(({ icon: Icon, title, body }) => (
+              <div key={title} className="md:px-8 md:first:pl-0 md:last:pr-0">
+                <h3 className="text-brand flex items-center gap-3 text-[19px] font-bold">
+                  <Icon className="size-7 shrink-0" strokeWidth={1.7} aria-hidden />
+                  {title}
+                </h3>
+                <p className="text-ink-muted mt-4 text-[13px] leading-[2]">{body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ---------- 3 steps ---------- */}
+        <section id="how" className="bg-white">
+          <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
+            <h2 className="text-center text-[24px] leading-[1.5] font-bold text-ink sm:text-[30px]">
+              撮影から台帳化まで、<span className="text-brand-link text-[1.2em]">3</span>
+              <Mark>つの工程で完結</Mark>
+            </h2>
+
+            <ol className="mt-16 grid gap-6 lg:grid-cols-3">
+              {STEPS.map((s, i) => (
+                <li key={s.n} className="relative">
+                  <div className="border-border-subtle h-full overflow-hidden rounded-[14px] border bg-white shadow-[0_2px_16px_rgba(11,24,73,0.06)]">
+                    <div className="from-brand/85 to-brand-soft/70 h-[190px] bg-gradient-to-br" />
+                    <div className="p-6">
+                      <h3 className="text-brand inline-block text-[16px] font-bold">
+                        <Mark>{s.title}</Mark>
+                      </h3>
+                      <p className="text-ink-muted mt-4 text-[12px] leading-[2]">{s.body}</p>
+                    </div>
+                  </div>
+                  <span className="bg-brand-soft absolute top-[164px] right-5 grid size-[34px] place-items-center rounded-full text-[13px] font-bold text-white">
+                    {s.n}
+                  </span>
+                  {i < STEPS.length - 1 && (
+                    <ChevronsRight
+                      className="text-brand/30 absolute top-[95px] -right-5 hidden size-9 lg:block"
+                      aria-hidden
+                    />
+                  )}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* ---------- Sharing / permissions ---------- */}
+        <section id="features" className="bg-surface-muted">
+          <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
+            <h2 className="text-brand text-center text-[26px] leading-[1.6] font-bold sm:text-[32px]">
+              同じプロジェクトのメン
+              <br className="hidden sm:block" />
+              <span className="text-accent">バーと、すぐに共有</span>
+            </h2>
+
+            <div className="mt-14 grid items-center gap-12 lg:grid-cols-2">
+              <div>
+                <p className="text-[14px] leading-[2.1] text-ink">
+                  クラウド上で写真を一元管理。案件ごとにアクセス権限を設定でき、事務所・協力会社・閲覧のみのメンバーまで、必要な範囲だけ共有できます。
+                </p>
+
+                <ul className="mt-10 space-y-7">
+                  {SHARING.map(({ icon: Icon, title, body }) => (
+                    <li key={title} className="flex gap-4">
+                      <span className="bg-brand-soft grid size-[50px] shrink-0 place-items-center rounded-full text-white">
+                        <Icon className="size-6" strokeWidth={1.7} aria-hidden />
+                      </span>
+                      <div>
+                        <h3 className="text-[14px] font-bold text-ink">{title}</h3>
+                        <p className="text-ink-muted mt-1 text-[12px] leading-[1.9]">{body}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link
+                  href="/signup"
+                  className="bg-accent hover:bg-accent-hover mt-10 inline-flex items-center gap-3 rounded-[30px] px-7 py-3.5 text-[13px] font-bold text-white transition-colors"
+                >
+                  権限・共有設定について
+                  <span className="grid size-7 place-items-center rounded-full bg-white/25" aria-hidden>
+                    ↗
+                  </span>
+                </Link>
+              </div>
+
+              <div className="from-brand/80 to-brand-soft/60 h-[420px] rounded-[14px] bg-gradient-to-br" />
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- AI OCR ---------- */}
+        <section id="editor" className="bg-surface-muted">
+          <div className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-10">
+            <h2 className="text-brand text-center text-[26px] leading-[1.6] font-bold sm:text-[32px]">
+              AIが黒板・手書き看板の文字も
+              <br className="hidden sm:block" />
+              <Mark>自動で読み取り</Mark>
+            </h2>
+
+            <div className="mt-14 grid items-center gap-8 lg:grid-cols-[1fr_auto_1fr]">
+              <div>
+                <p className="border-border-subtle text-ink-muted mx-auto mb-5 w-fit rounded-[30px] border bg-white px-6 py-2 text-[12px]">
+                  手書き看板の例
+                </p>
+                <ChalkBoard rows={BOARD_ROWS} handwritten />
+              </div>
+
+              <ChevronsRight className="text-brand/40 mx-auto size-10 rotate-90 lg:rotate-0" aria-hidden />
+
+              <div>
+                <p className="border-border-subtle text-ink-muted mx-auto mb-5 w-fit rounded-[30px] border bg-white px-6 py-2 text-[12px]">
+                  読み取り結果（例）
+                </p>
+                <ChalkBoard rows={BOARD_ROWS} />
+              </div>
+            </div>
+
+            <ul className="mt-10 grid gap-4 sm:grid-cols-3">
+              {['黒板・手書き看板の文字をAIが自動認識', '写真ごとにデータを自動で整理・分類', '台帳の作成まで自動で完了'].map(
+                (t) => (
+                  <li key={t} className="flex items-center gap-3">
+                    <span className="bg-accent grid size-5 shrink-0 place-items-center rounded-[4px] text-white">
+                      <Check className="size-3.5" strokeWidth={3} aria-hidden />
+                    </span>
+                    <span className="text-[12px] text-ink">{t}</span>
+                  </li>
+                ),
+              )}
+            </ul>
+
+            <p className="text-ink-muted mx-auto mt-9 max-w-[720px] text-center text-[12px] leading-[2]">
+              ※
+              手書き文字の判別精度は、文字の大きさ・書き方・撮影環境などにより異なる場合があります。読み取り結果は下書きとして扱われ、内容は確認・修正のうえご利用ください。
+            </p>
+          </div>
+        </section>
+
+        {/* ---------- Workflow ---------- */}
+        <section className="bg-white">
+          <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
+            <SectionTag>シンプルなワークフロー</SectionTag>
+            <h2 className="text-center text-[24px] leading-[1.5] font-bold text-ink sm:text-[30px]">
+              現場撮影から報告書作成まで、<Mark>すべてをひとつに</Mark>。
+            </h2>
+            <p className="text-ink-muted mt-6 text-center text-[13px]">
+              現場で撮影した写真をAIが整理し、写真台帳の作成から帳票出力まで効率化します。
+            </p>
+
+            <ol className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {WORKFLOW.map(({ n, title, body, icon: Icon }) => (
+                <li
+                  key={n}
+                  className="border-border-subtle rounded-[14px] border bg-white p-6 shadow-[0_2px_16px_rgba(11,24,73,0.06)]"
+                >
+                  <h3 className="flex items-center gap-3">
+                    <span className="bg-brand-ring/20 text-brand grid size-[38px] shrink-0 place-items-center rounded-full text-[13px] font-bold">
+                      {n}
+                    </span>
+                    <span className="text-brand-link text-[18px] font-bold">{title}</span>
+                  </h3>
+                  <p className="text-ink-muted mt-4 text-[13px] leading-[1.9]">{body}</p>
+                  <div className="border-border-subtle mt-6 grid h-[130px] place-items-center rounded-[10px] border bg-surface-muted">
+                    <Icon className="text-brand/40 size-12" strokeWidth={1.2} aria-hidden />
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* ---------- Promise band ---------- */}
+        <section className="bg-brand">
+          <div className="mx-auto max-w-[1240px] px-6 py-14 lg:px-10">
+            <ul className="flex flex-wrap justify-center gap-4">
+              {PROMISES.map(({ icon: Icon, label }) => (
+                <li
+                  key={label}
+                  className="flex items-center gap-2.5 rounded-[30px] bg-white/12 px-6 py-3 text-white"
+                >
+                  <Icon className="text-accent size-4" strokeWidth={2} aria-hidden />
+                  <span className="text-[13px] font-medium">{label}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-10 flex flex-wrap justify-center gap-5">
+              <Link
+                href="/signup"
+                className="bg-accent hover:bg-accent-hover rounded-[8px] px-10 py-4 text-[15px] font-bold text-white transition-colors"
+              >
+                無料で試してみる　→
+              </Link>
+              <Link
+                href="/contact"
+                className="bg-accent hover:bg-accent-hover rounded-[8px] px-10 py-4 text-[15px] font-bold text-white transition-colors"
+              >
+                デモを予約する　→
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- Audiences ---------- */}
+        <section id="delivery" className="bg-surface-muted">
+          <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
+            <h2 className="text-center text-[24px] leading-[1.6] font-bold text-ink sm:text-[30px]">
+              現場から事務所、大規模プロジェクトまで。
+              <br />
+              <span className="text-brand-link">すべての建設業務にフィット。</span>
+            </h2>
+
+            <div className="mt-16 space-y-7">
+              {AUDIENCES.map((a) => (
+                <article
+                  key={a.lead}
+                  className="border-border-subtle rounded-[14px] border bg-white p-7 shadow-[0_2px_16px_rgba(11,24,73,0.05)] lg:p-9"
+                >
+                  <div className="grid gap-8 lg:grid-cols-[auto_1fr_minmax(0,380px)]">
+                    <span className={`grid size-[58px] shrink-0 place-items-center rounded-[12px] ${a.tone}`}>
+                      <a.icon className="size-7" strokeWidth={1.7} aria-hidden />
+                    </span>
+
+                    <div className="min-w-0">
+                      <h3 className="text-[17px] font-bold sm:text-[19px]">
+                        <span className="text-brand-link">{a.lead}</span>{' '}
+                        <span className="text-ink">{a.title}</span>
+                      </h3>
+
+                      <ul className="mt-6 space-y-3.5">
+                        {a.points.map((p) => (
+                          <li key={p} className="flex items-start gap-3">
+                            <span className="bg-brand-ring/25 text-brand mt-0.5 grid size-[19px] shrink-0 place-items-center rounded-full">
+                              <Check className="size-3" strokeWidth={3} aria-hidden />
+                            </span>
+                            <span className="text-[13px] leading-[1.8] text-ink">{p}</span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <div className="border-accent bg-accent/8 mt-7 border-l-[3px] px-5 py-4">
+                        <p className="text-brand text-[12px] font-bold">こんな方におすすめ</p>
+                        <ul className="text-ink-muted mt-2 space-y-1 text-[12px]">
+                          {a.recommend.map((r) => (
+                            <li key={r}>・{r}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="from-brand/70 to-brand-soft/50 hidden h-full min-h-[200px] rounded-[10px] bg-gradient-to-br lg:block" />
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ---------- FAQ ---------- */}
+        <section className="bg-white">
+          <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
+            <SectionTag>FAQ</SectionTag>
+            <h2 className="text-center text-[26px] font-bold text-ink sm:text-[32px]">
+              <Mark>よくあるご質問</Mark>
+            </h2>
+            <p className="text-ink-muted mt-6 text-center text-[13px]">
+              導入前によくいただくご質問にお答えします。
+            </p>
+            <Faq />
+          </div>
+        </section>
+
+        {/* ---------- Closing CTA ---------- */}
+        <section className="bg-white pb-24">
+          <div className="mx-auto max-w-[1240px] px-6 lg:px-10">
+            <div className="relative isolate overflow-hidden rounded-[16px] px-6 py-20 text-center">
+              <Image
+                src="/brand/lp-cta.webp"
+                alt=""
+                fill
+                sizes="(max-width: 1240px) 100vw, 1240px"
+                className="-z-10 object-cover"
+              />
+              <div className="bg-brand/85 absolute inset-0 -z-10" />
+
+              <h2 className="text-[24px] leading-[1.6] font-bold text-white sm:text-[32px]">
+                書類作成の時間を、
+                <br />
+                現場の<span className="text-accent">安全管理・品質管理</span>に。
+              </h2>
+
+              <Link
+                href="/signup"
+                className="bg-accent hover:bg-accent-hover mt-10 inline-flex rounded-[8px] px-10 py-4 text-[15px] font-bold text-white transition-colors"
+              >
+                無料デモを試してみる　→
+              </Link>
+
+              <p className="mt-6 text-[12px] text-white/85">
+                ※無料でお試しいただけます。お気軽にご利用ください。
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <SiteFooter />
+    </>
+  );
+}
