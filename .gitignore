@@ -44,3 +44,6 @@ next-env.d.ts
 # local env
 .env
 .env.local
+
+# local dev database (PGlite)
+.pgdata/

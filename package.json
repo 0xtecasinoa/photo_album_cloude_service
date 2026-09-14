@@ -14,7 +14,8 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed.ts",
     "test": "tsx --test \"src/**/*.test.ts\"",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "dev:db": "node scripts/dev-db.mjs"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",
@@ -46,6 +47,8 @@
     "zod": "^4.6.4"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite-socket": "^0.2.11",
     "@tailwindcss/postcss": "^4",
     "@types/archiver": "^8.0.0",
     "@types/bcryptjs": "^2.4.6",

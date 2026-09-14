@@ -125,30 +125,43 @@ cp .env.example .env
 openssl rand -base64 32
 ```
 
-### 3. 開発用インフラの起動
+### 3. データベースの起動
 
-PostgreSQL と MinIO（S3 互換ストレージ）を起動します。
+Docker が使える場合は PostgreSQL と MinIO（S3 互換ストレージ）を起動します。
 
 ```bash
 docker compose up -d
 ```
 
-> **補足**
-> `permission denied while trying to connect to the Docker daemon` と表示される場合は、
-> 実行ユーザーが `docker` グループに属していません。以下のいずれかで解決できます。
+MinIO の管理画面は <http://localhost:9001>（`minioadmin` / `minioadmin`）です。
+
+> **Docker が使えない場合**
+> `npm run dev:db` で、Docker なしに PostgreSQL を起動できます。
+> PGlite（WebAssembly 版 PostgreSQL）を PostgreSQL のワイヤプロトコルで
+> 公開するため、`DATABASE_URL` もアプリ側のコードも本番と同じまま使えます。
 >
 > ```bash
-> sudo usermod -aG docker $USER   # 恒久的な対応（再ログインが必要）
-> sudo docker compose up -d       # 一時的な対応
+> npm run dev:db        # 127.0.0.1:5432 で待ち受け、データは .pgdata/
 > ```
+>
+> ただし **同時接続は1本まで**です。開発サーバーを起動したまま psql などから
+> 接続するとリセットされます。並行処理が必要な場合は通常の PostgreSQL を使い、
+> `DB_POOL_MAX` で接続数を指定してください。
 
-起動後、MinIO の管理画面は <http://localhost:9001>（`minioadmin` / `minioadmin`）から確認できます。
-
-### 4. データベースのマイグレーション
+### 4. マイグレーションと初期データ
 
 ```bash
 npm run db:migrate
+npm run db:seed
 ```
+
+シードを流すと、以下のアカウントでログインできます。
+
+| メールアドレス | パスワード | 権限 |
+| --- | --- | --- |
+| `taro.yamada@example.com` | `password1234` | オーナー |
+| `hanako.sato@example.com` | `password1234` | 編集者 |
+| `ichiro.suzuki@example.com` | `password1234` | 閲覧者 |
 
 ### 5. 開発サーバーの起動
 
@@ -185,10 +198,31 @@ curl -b "authjs.session-token=$TOKEN" \
 | `S3_SECRET_ACCESS_KEY` | ○ | シークレットキー |
 | `S3_FORCE_PATH_STYLE` | | MinIO 利用時は `true`。本番の S3 では不要 |
 | `MAX_UPLOAD_BYTES` | | 1 ファイルあたりの上限（既定：50MB） |
+| `GOOGLE_CLIENT_ID` | | Google ログインを使う場合のみ |
+| `GOOGLE_CLIENT_SECRET` | | Google ログインを使う場合のみ |
+| `DB_POOL_MAX` | | 接続プールの上限（既定：開発 1／本番 20） |
 | `ANTHROPIC_API_KEY` | | 手書き看板 OCR を利用する場合のみ |
 
 環境変数は起動時に Zod で検証されます。不足や不正があれば、
 実行中ではなく起動時にエラーとして表示されます。
+
+### Google ログインを有効にする（任意）
+
+1. Google Cloud Console で OAuth クライアント ID（ウェブアプリケーション）を作成
+2. 承認済みのリダイレクト URI に次を追加
+   `http://localhost:3000/api/auth/callback/google`
+3. `.env` に以下を設定
+
+```bash
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+```
+
+未設定のあいだは、ログイン・新規登録画面に Google のボタンは表示されません。
+押しても必ず失敗するボタンを見せないためです。
+
+初回サインイン時には、組織と7つの既定ロールが自動で作成され、
+そのユーザーはオーナーになります。
 
 ---
 
@@ -332,7 +366,11 @@ await requireProjectCapability(userId, projectId, 'photo.delete');
 - データベーススキーマ（全 16 テーブル）とマイグレーション
 - 権限モデル（38 権限・7 ロール）と判定処理
 - 監査ログ
-- 認証（Auth.js v5、資格情報によるログイン、ルート保護）
+- 認証（Auth.js v5）
+  - 新規登録（組織と7つの既定ロールを同時に作成し、そのままログイン）
+  - ログイン・ログアウト、ルート保護
+  - Google ログイン（環境変数が設定されている場合のみ表示）
+  - 入力検証とエラー表示、callbackUrl の検証（外部URLへの遷移を遮断）
 - EXIF 解析（撮影日時・GPS・向き）とテスト
 - 画像処理（ハッシュ・サムネイル・表示用画像・有効画素数判定）とテスト
 - 電子小黒板テンプレートエディタ（動作確認済み）
@@ -345,8 +383,10 @@ await requireProjectCapability(userId, projectId, 'photo.delete');
 
 ### 未実装
 
-- 画面から実データベースへの接続（現在は `src/lib/demo-data.ts` の表示用データを参照）
-  - 差し替え箇所は `src/lib/export/ledger-source.ts` の 2 関数に集約しています
+- 画面から実データベースへの接続（一部のみ）
+  - ヘッダー・サイドバーはログイン中のユーザーと組織を実データで表示します
+  - 一覧・台帳などの本文はまだ `src/lib/demo-data.ts` を参照しています。
+    差し替え箇所は `src/lib/export/ledger-source.ts` の 2 関数です
 - 写真アップロードの API 実装
 - Word（.docx）出力
 - 手書き看板の OCR 処理本体

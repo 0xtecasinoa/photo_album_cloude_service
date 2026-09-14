@@ -26,6 +26,10 @@ const envSchema = z.object({
   /** Upload ceiling per file, bytes. Construction photos are large. */
   MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(52428800), // 50MB
 
+  /** Optional: Google OAuth. The button is hidden unless both are set. */
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+
   /** Optional: vision model for handwritten 看板 OCR. */
   ANTHROPIC_API_KEY: z.string().optional(),
 });

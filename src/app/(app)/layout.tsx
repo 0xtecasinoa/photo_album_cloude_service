@@ -1,24 +1,28 @@
 import { Sidebar } from '@/components/app/sidebar';
 import { Topbar } from '@/components/app/topbar';
-import { demoOrg, demoUser } from '@/lib/demo-data';
+import { requireSession } from '@/lib/auth/session';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  // The proxy already blocks anonymous requests; this also gives every page the
+  // signed-in user and their organisation without a second query.
+  const { user, organization } = await requireSession();
+
   return (
     <div className="flex min-h-dvh">
       {/* The sidebar is fixed-width by design; it drops away below lg where the
           layout switches to a single column. */}
       <div className="hidden lg:flex">
         <Sidebar
-          storageUsedBytes={demoOrg.storageUsedBytes}
-          storageQuotaBytes={demoOrg.storageQuotaBytes}
+          storageUsedBytes={organization.storageUsedBytes}
+          storageQuotaBytes={organization.storageQuotaBytes}
         />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
-          userName={demoUser.name}
-          roleLabel={demoUser.roleLabel}
-          avatarUrl={demoUser.avatarUrl}
+          userName={user.name}
+          roleLabel={user.roleLabel}
+          avatarUrl={user.image}
           notificationCount={3}
         />
         <main className="min-w-0 flex-1 pb-16">{children}</main>

@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { CircleHelp, Bell } from 'lucide-react';
+import { CircleHelp, Bell, LogOut } from 'lucide-react';
+import { signOutAction } from '@/app/(app)/actions';
 
 export type TopbarProps = {
   userName: string;
@@ -48,6 +49,17 @@ export function Topbar({ userName, roleLabel, avatarUrl, notificationCount = 0 }
           <p className="text-sm font-bold text-ink">{userName}</p>
           <p className="text-xs text-ink-muted">{roleLabel}</p>
         </div>
+
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            className="text-ink-muted hover:bg-surface-sunken hover:text-danger ml-1 grid size-10 place-items-center rounded-full transition-colors"
+            aria-label="ログアウト"
+            title="ログアウト"
+          >
+            <LogOut className="size-[18px]" strokeWidth={1.8} aria-hidden />
+          </button>
+        </form>
       </div>
     </div>
   );

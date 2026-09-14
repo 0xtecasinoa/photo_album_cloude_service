@@ -14,7 +14,16 @@ const globalForDb = globalThis as unknown as {
 const client =
   globalForDb.__pgClient ??
   postgres(env.DATABASE_URL, {
-    max: env.NODE_ENV === 'production' ? 20 : 5,
+    /*
+     * One connection in development.
+     *
+     * `npm run dev:db` serves PostgreSQL through PGlite's socket server, which
+     * accepts a single connection at a time — a second one is reset. postgres.js
+     * queues queries on one connection, so the app behaves correctly; it just does
+     * not run them in parallel. Point DATABASE_URL at a real PostgreSQL and raise
+     * DB_POOL_MAX when you need concurrency.
+     */
+    max: Number(process.env.DB_POOL_MAX ?? (env.NODE_ENV === 'production' ? 20 : 1)),
     idle_timeout: 20,
     connect_timeout: 10,
   });
