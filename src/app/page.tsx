@@ -492,7 +492,8 @@ export default function LandingPage() {
                   )}
                 >
                   <h3 className="flex items-center gap-3">
-                    <span className="bg-brand-ring grid size-[38px] shrink-0 place-items-center rounded-full text-[13px] font-bold text-white">
+                    {/* Disc grows with the numeral so it does not look cramped. */}
+                    <span className="bg-brand-ring grid size-[44px] shrink-0 place-items-center rounded-full text-[17px] font-bold text-white">
                       {step.n}
                     </span>
                     <span className="text-brand-link text-[18px] font-bold">{step.title}</span>
