@@ -13,12 +13,13 @@
  */
 import 'dotenv/config';
 import { chromium } from 'playwright-core';
-import { encode } from 'next-auth/jwt';
 
 const BASE = process.env.BASE ?? 'http://localhost:3000';
-const HOST = new URL(BASE).hostname;
 const CHROME = process.env.CHROME_PATH ?? '/usr/bin/google-chrome';
-const COOKIE = 'authjs.session-token';
+
+/** Seeded by `npm run db:seed`. */
+const LOGIN_EMAIL = process.env.SMOKE_EMAIL ?? 'taro.yamada@example.com';
+const LOGIN_PASSWORD = process.env.SMOKE_PASSWORD ?? 'password1234';
 
 const results = [];
 const check = (name, passed, detail = '') => results.push({ name, passed, detail });
@@ -29,16 +30,17 @@ const browser = await chromium.launch({
 });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 1100 }, locale: 'ja-JP' });
 
-// 実データベースがないため、セッションを直接発行してログイン状態を作る。
-const token = await encode({
-  token: { userId: 'user-1', organizationId: 'org-demo', sub: 'user-1', name: '山田 太郎' },
-  secret: process.env.AUTH_SECRET,
-  salt: COOKIE,
-  maxAge: 3600,
-});
-await ctx.addCookies([{ name: COOKIE, value: token, domain: HOST, path: '/', httpOnly: true }]);
-
 const page = await ctx.newPage();
+
+// 実際にログインする。セッションを偽造すると、存在しないユーザーIDで
+// 通ってしまい、認証まわりの不具合を取りこぼすため。
+await page.goto(`${BASE}/login`, { waitUntil: 'load' });
+await page.waitForTimeout(1200);
+await page.fill('#email', LOGIN_EMAIL);
+await page.fill('#password', LOGIN_PASSWORD);
+await page.click('button[type=submit]');
+await page.waitForURL(/\/dashboard/, { timeout: 30000 }).catch(() => {});
+check('ログインできる', new URL(page.url()).pathname === '/dashboard', page.url().replace(BASE, ''));
 const jsErrors = [];
 page.on('pageerror', (e) => jsErrors.push(e.message));
 

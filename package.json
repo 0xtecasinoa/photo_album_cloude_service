@@ -15,7 +15,8 @@
     "db:seed": "tsx src/db/seed.ts",
     "test": "tsx --test \"src/**/*.test.ts\"",
     "smoke": "node scripts/smoke.mjs",
-    "dev:db": "node scripts/dev-db.mjs"
+    "dev:db": "node scripts/dev-db.mjs",
+    "smoke:auth": "node scripts/smoke-auth.mjs"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",
