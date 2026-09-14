@@ -61,6 +61,15 @@ body {
   color: var(--color-ink);
 }
 
+/*
+ * Japanese text may break between almost any two characters, so a narrow heading
+ * splits words like 「工程」 or 「完結」 across lines. `auto-phrase` breaks on phrase
+ * boundaries instead. Browsers without support simply fall back to the default.
+ */
+.jp-phrase {
+  word-break: auto-phrase;
+}
+
 /* Tabular figures keep 撮影日時 and storage counters from jittering. */
 .tabular {
   font-variant-numeric: tabular-nums;

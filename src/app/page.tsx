@@ -16,10 +16,16 @@ export const metadata: Metadata = {
     '現場で撮ってボタンひとつ。黒板の内容をAIが読み取り、工事写真台帳のフォーマットへ自動で流し込みます。電子小黒板・権限共有・電子納品まで、ひとつのクラウドで完結。',
 };
 
-/** Gold marker-pen highlight used behind key phrases throughout the design. */
+/**
+ * Gold marker-pen highlight used behind key phrases throughout the design.
+ *
+ * Both colour stops sit at the same position, which is what gives the hard edge of a
+ * highlighter rather than a fade. The first stop must be transparent — setting both to
+ * the accent colour fills the whole line height and reads as a solid label instead.
+ */
 function Mark({ children }: { children: React.ReactNode }) {
   return (
-    <span className="from-accent/70 to-accent/70 bg-gradient-to-b from-[62%] to-[62%] bg-[length:100%_100%] px-1">
+    <span className="bg-gradient-to-b from-transparent from-[56%] to-accent/85 to-[56%] px-1">
       {children}
     </span>
   );
@@ -40,9 +46,27 @@ const BENEFITS = [
 ];
 
 const STEPS = [
-  { n: '01', title: '現場で写真を撮る', body: 'いつも通りアプリで撮影するだけ。黒板の情報もそのまま読み取ります。' },
-  { n: '02', title: 'ボタンを押すだけ', body: 'フォーマットの選択や項目入力は不要。ワンタップで自動生成が始まります。' },
-  { n: '03', title: '約1分で台帳が完成', body: 'そのまま社内共有・提出用フォーマットとして書き出せます。' },
+  {
+    n: '01',
+    title: '現場で写真を撮る',
+    body: 'いつも通りアプリで撮影するだけ。黒板の情報もそのまま読み取ります。',
+    image: '/brand/step-01.webp',
+    alt: 'ヘルメット姿の作業員が、配筋をスマートフォンで撮影している様子',
+  },
+  {
+    n: '02',
+    title: 'ボタンを押すだけ',
+    body: 'フォーマットの選択や項目入力は不要。ワンタップで自動生成が始まります。',
+    image: '/brand/step-02.webp',
+    alt: '事務所でタブレットを操作し、写真台帳を確認している様子',
+  },
+  {
+    n: '03',
+    title: '約1分で台帳が完成',
+    body: 'そのまま社内共有・提出用フォーマットとして書き出せます。',
+    image: '/brand/step-03.webp',
+    alt: '図面に変更箇所が書き込まれたタブレットと、現場写真を表示したスマートフォン',
+  },
 ];
 
 const SHARING = [
@@ -138,7 +162,7 @@ export default function LandingPage() {
 
           <div className="mx-auto grid max-w-[1440px] items-center gap-12 px-6 pt-[140px] pb-20 lg:grid-cols-[minmax(0,600px)_minmax(0,1fr)] lg:gap-10 lg:px-10 lg:pt-[180px] lg:pb-28">
             <div>
-              <h1 className="text-[34px] leading-[1.35] font-bold text-white sm:text-[44px] lg:text-[52px]">
+              <h1 className="jp-phrase text-[34px] leading-[1.35] font-bold text-white sm:text-[44px] lg:text-[52px]">
                 写真を撮るだけ。
                 <br />
                 あとの<span className="text-accent text-[1.25em]">1</span>分は、台帳が自動
@@ -183,7 +207,7 @@ export default function LandingPage() {
           <div className="mx-auto max-w-[1240px] px-6 py-20 lg:px-10">
             <p className="mb-6 text-[13px] text-white/75">選ばれる理由</p>
             <div className="grid gap-10 lg:grid-cols-2 lg:gap-20">
-              <h2 className="text-[26px] leading-[1.6] font-bold sm:text-[32px]">
+              <h2 className="jp-phrase text-[26px] leading-[1.6] font-bold sm:text-[32px]">
                 撮るから出すまで、ひとつの
                 <br />
                 クラ<span className="text-accent">ウドで完結する</span>から。
@@ -208,8 +232,8 @@ export default function LandingPage() {
                   <Image
                     src={icon}
                     alt=""
-                    width={65}
-                    height={65}
+                    width={85}
+                    height={85}
                     quality={95}
                     aria-hidden
                     className="size-9 shrink-0 object-contain"
@@ -225,30 +249,50 @@ export default function LandingPage() {
         {/* ---------- 3 steps ---------- */}
         <section id="how" className="bg-white">
           <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
-            <h2 className="text-center text-[24px] leading-[1.5] font-bold text-ink sm:text-[30px]">
-              撮影から台帳化まで、<span className="text-brand-link text-[1.2em]">3</span>
+            <h2 className="jp-phrase text-center text-[24px] leading-[1.5] font-bold text-ink sm:text-[30px]">
+              撮影から台帳化まで、<span className="text-brand-link text-[1.6em]">3</span>
               <Mark>つの工程で完結</Mark>
             </h2>
 
-            <ol className="mt-16 grid gap-6 lg:grid-cols-3">
-              {STEPS.map((s, i) => (
-                <li key={s.n} className="relative">
-                  <div className="border-border-subtle h-full overflow-hidden rounded-[14px] border bg-white shadow-[0_2px_16px_rgba(11,24,73,0.06)]">
-                    <div className="from-brand/85 to-brand-soft/70 h-[190px] bg-gradient-to-br" />
-                    <div className="p-6">
-                      <h3 className="text-brand inline-block text-[16px] font-bold">
-                        <Mark>{s.title}</Mark>
+            <ol className="mt-16 grid gap-6 lg:grid-cols-3 lg:gap-x-12">
+              {STEPS.map((step, i) => (
+                <li key={step.n} className="relative">
+                  <div className="border-border-subtle h-full rounded-[14px] border bg-white p-3 shadow-[0_2px_16px_rgba(11,24,73,0.06)]">
+                    {/*
+                      Each photo carries a notch cut out of its bottom-right corner in the
+                      alpha channel — that is where the step number sits. The card stays
+                      white behind it, so the notch reads as a gap around the badge.
+                    */}
+                    <div className="relative">
+                      <Image
+                        src={step.image}
+                        alt={step.alt}
+                        width={358}
+                        height={284}
+                        sizes="(max-width: 1024px) 92vw, 360px"
+                        className="aspect-[358/284] w-full rounded-[12px] object-cover"
+                      />
+                      <span className="bg-brand-soft absolute right-[4%] bottom-[3%] grid size-[46px] place-items-center rounded-full text-[15px] font-bold text-white">
+                        {step.n}
+                      </span>
+                    </div>
+
+                    <div className="px-3 pt-5 pb-4">
+                      <h3 className="jp-phrase text-brand inline-block text-[16px] font-bold">
+                        <Mark>{step.title}</Mark>
                       </h3>
-                      <p className="text-ink-muted mt-4 text-[12px] leading-[2]">{s.body}</p>
+                      <p className="text-ink-muted mt-4 text-[12px] leading-[2]">{step.body}</p>
                     </div>
                   </div>
-                  <span className="bg-brand-soft absolute top-[164px] right-5 grid size-[34px] place-items-center rounded-full text-[13px] font-bold text-white">
-                    {s.n}
-                  </span>
+
                   {i < STEPS.length - 1 && (
-                    <ChevronsRight
-                      className="text-brand/30 absolute top-[95px] -right-5 hidden size-9 lg:block"
+                    <Image
+                      src="/brand/step-arrow.webp"
+                      alt=""
+                      width={92}
+                      height={106}
                       aria-hidden
+                      className="absolute top-[26%] -right-10 hidden h-[44px] w-auto lg:block"
                     />
                   )}
                 </li>
@@ -260,7 +304,7 @@ export default function LandingPage() {
         {/* ---------- Sharing / permissions ---------- */}
         <section id="features" className="bg-surface-muted">
           <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
-            <h2 className="text-brand text-center text-[26px] leading-[1.6] font-bold sm:text-[32px]">
+            <h2 className="jp-phrase text-brand text-center text-[26px] leading-[1.6] font-bold sm:text-[32px]">
               同じプロジェクトのメン
               <br className="hidden sm:block" />
               <span className="text-accent">バーと、すぐに共有</span>
@@ -305,7 +349,7 @@ export default function LandingPage() {
         {/* ---------- AI OCR ---------- */}
         <section id="editor" className="bg-surface-muted">
           <div className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-10">
-            <h2 className="text-brand text-center text-[26px] leading-[1.6] font-bold sm:text-[32px]">
+            <h2 className="jp-phrase text-brand text-center text-[26px] leading-[1.6] font-bold sm:text-[32px]">
               AIが黒板・手書き看板の文字も
               <br className="hidden sm:block" />
               <Mark>自動で読み取り</Mark>
@@ -353,7 +397,7 @@ export default function LandingPage() {
         <section className="bg-white">
           <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
             <SectionTag>シンプルなワークフロー</SectionTag>
-            <h2 className="text-center text-[24px] leading-[1.5] font-bold text-ink sm:text-[30px]">
+            <h2 className="jp-phrase text-center text-[24px] leading-[1.5] font-bold text-ink sm:text-[30px]">
               現場撮影から報告書作成まで、<Mark>すべてをひとつに</Mark>。
             </h2>
             <p className="text-ink-muted mt-6 text-center text-[13px]">
@@ -417,7 +461,7 @@ export default function LandingPage() {
         {/* ---------- Audiences ---------- */}
         <section id="delivery" className="bg-surface-muted">
           <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
-            <h2 className="text-center text-[24px] leading-[1.6] font-bold text-ink sm:text-[30px]">
+            <h2 className="jp-phrase text-center text-[24px] leading-[1.6] font-bold text-ink sm:text-[30px]">
               現場から事務所、大規模プロジェクトまで。
               <br />
               <span className="text-brand-link">すべての建設業務にフィット。</span>
@@ -496,7 +540,7 @@ export default function LandingPage() {
               />
               <div className="bg-brand/85 absolute inset-0 -z-10" />
 
-              <h2 className="text-[24px] leading-[1.6] font-bold text-white sm:text-[32px]">
+              <h2 className="jp-phrase text-[24px] leading-[1.6] font-bold text-white sm:text-[32px]">
                 書類作成の時間を、
                 <br />
                 現場の<span className="text-accent">安全管理・品質管理</span>に。
