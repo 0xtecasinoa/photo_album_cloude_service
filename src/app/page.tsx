@@ -485,7 +485,8 @@ export default function LandingPage() {
                 <li
                   key={step.n}
                   className={cn(
-                    'border-border-subtle relative rounded-[14px] border bg-white p-6 shadow-[0_2px_16px_rgba(11,24,73,0.06)]',
+                    // No outline — the cards are separated by the soft drop shadow alone.
+                    'relative rounded-[14px] bg-white p-6 shadow-[0_2px_16px_rgba(11,24,73,0.06)]',
                     'lg:col-span-2',
                     i === 3 && 'lg:col-start-2',
                   )}
