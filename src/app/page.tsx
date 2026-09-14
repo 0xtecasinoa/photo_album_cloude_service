@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
-  Timer, Wallet, HardHat, Check, ChevronsRight, ShieldCheck, Share2, Clock,
+  HardHat, Check, ChevronsRight, ShieldCheck, Share2, Clock,
   Camera, Cloud, Sparkles, FileSpreadsheet, FileOutput, UserRoundCog, Building, Landmark,
 } from 'lucide-react';
 import { SiteHeader } from '@/components/marketing/site-header';
@@ -34,9 +34,9 @@ function SectionTag({ children }: { children: React.ReactNode }) {
 }
 
 const BENEFITS = [
-  { icon: Timer, title: '1分で自動作成', body: '撮影後、その場ですぐに台帳が完成' },
-  { icon: Wallet, title: '残業・人件費を削減', body: '事務所に戻っての台帳作業が不要に' },
-  { icon: HardHat, title: '現場管理に時間を', body: '浮いた時間を安全・品質確認へ' },
+  { icon: '/brand/icon-mobile.webp', title: '1分で自動作成', body: '撮影後、その場ですぐに台帳が完成' },
+  { icon: '/brand/icon-prioritization.webp', title: '残業・人件費を削減', body: '事務所に戻っての台帳作業が不要に' },
+  { icon: '/brand/icon-agree.webp', title: '現場管理に時間を', body: '浮いた時間を安全・品質確認へ' },
 ];
 
 const STEPS = [
@@ -197,10 +197,23 @@ export default function LandingPage() {
 
         <section className="bg-surface-muted">
           <div className="mx-auto grid max-w-[1240px] gap-10 px-6 py-16 md:grid-cols-3 md:divide-x md:divide-border-subtle lg:px-10">
-            {BENEFITS.map(({ icon: Icon, title, body }) => (
+            {BENEFITS.map(({ icon, title, body }) => (
               <div key={title} className="md:px-8 md:first:pl-0 md:last:pr-0">
                 <h3 className="text-brand flex items-center gap-3 text-[19px] font-bold">
-                  <Icon className="size-7 shrink-0" strokeWidth={1.7} aria-hidden />
+                  {/* Decorative: the heading beside it already carries the meaning. */}
+                  {/*
+                    Rendered larger than the line icons these replaced: they are filled
+                    illustrations, and below ~36px the interior detail turns to mush.
+                  */}
+                  <Image
+                    src={icon}
+                    alt=""
+                    width={65}
+                    height={65}
+                    quality={95}
+                    aria-hidden
+                    className="size-9 shrink-0 object-contain"
+                  />
                   {title}
                 </h3>
                 <p className="text-ink-muted mt-4 text-[13px] leading-[2]">{body}</p>
