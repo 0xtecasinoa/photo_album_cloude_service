@@ -153,6 +153,10 @@ PGlite（WebAssembly 版の PostgreSQL）を PostgreSQL のワイヤプロトコ
 > `dev:db` は一度に1つの接続しか受け付けません。開発サーバーを起動したまま
 > psql などから接続すると切断されます。そのため開発時の接続プールは 1 にしています
 > （`DB_POOL_MAX` で変更可）。並行処理が必要なら通常の PostgreSQL を使ってください。
+>
+> この制限のため、`npm run build` したものを `npm start` で動かす場合は
+> `dev:db` を使えません（本番サーバーは複数の接続を張るため `ECONNRESET` で落ちます）。
+> 本番ビルドの動作確認には通常の PostgreSQL を用意してください。
 
 ### 4. マイグレーションと初期データ
 
