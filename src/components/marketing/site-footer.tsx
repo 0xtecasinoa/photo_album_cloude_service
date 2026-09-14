@@ -74,7 +74,7 @@ export function SiteFooter() {
                 alt="らくらく写真台帳"
                 width={180}
                 height={143}
-                className="size-[92px] rounded-[18px] object-contain"
+                className="size-[64px] rounded-[12px] object-contain"
               />
               <p className="mt-5 text-[13px] leading-[1.9] text-white/90">
                 工事写真の撮影から台帳作成・共有まで、
