@@ -89,8 +89,8 @@ function ProductHeading({ product }: { product: Product }) {
 function FlowCaption({ title, body, className }: { title: string; body: string; className?: string }) {
   return (
     <div className={className}>
-      <p className="text-brand-link text-[15px] font-bold">{title}</p>
-      <p className="text-ink-muted mt-1.5 text-[12.5px] leading-[1.8]">{body}</p>
+      <p className="text-brand-link text-[17px] font-bold">{title}</p>
+      <p className="text-ink-muted mt-2 text-[14px] leading-[1.85]">{body}</p>
     </div>
   );
 }
@@ -236,25 +236,25 @@ export function ConnectedSystem() {
         <ul className="mt-12 grid gap-x-6 gap-y-7 sm:grid-cols-2 lg:hidden">
           {FLOW.map(({ title, body }) => (
             <li key={title}>
-              <p className="text-brand-link text-[15px] font-bold">{title}</p>
-              <p className="text-ink-muted mt-1.5 text-[12.5px] leading-[1.8]">{body}</p>
+              <p className="text-brand-link text-[17px] font-bold">{title}</p>
+              <p className="text-ink-muted mt-2 text-[14px] leading-[1.85]">{body}</p>
             </li>
           ))}
         </ul>
 
         {/* ---------- outcomes ---------- */}
-        <h3 className="text-brand mt-20 text-center text-[17px] font-bold">
+        <h3 className="text-brand mt-20 text-center text-[20px] font-bold sm:text-[22px]">
           一つにつながるからこんなに変わる！
         </h3>
-        <ul className="mt-8 grid gap-6 sm:grid-cols-3">
+        <ul className="mt-10 grid gap-7 sm:grid-cols-3">
           {OUTCOMES.map(({ title, body }) => (
             <li key={title} className="flex items-start gap-3">
-              <span className="bg-accent mt-0.5 grid size-5 shrink-0 place-items-center rounded-[4px] text-white">
-                <Check className="size-3.5" strokeWidth={3} aria-hidden />
+              <span className="bg-accent mt-0.5 grid size-6 shrink-0 place-items-center rounded-[5px] text-white">
+                <Check className="size-4" strokeWidth={3} aria-hidden />
               </span>
               <div>
-                <p className="text-[13px] font-bold text-ink">{title}</p>
-                <p className="text-ink-muted mt-1 text-[11px] leading-[1.8]">{body}</p>
+                <p className="text-[16px] font-bold text-ink">{title}</p>
+                <p className="text-ink-muted mt-1.5 text-[13.5px] leading-[1.85]">{body}</p>
               </div>
             </li>
           ))}
