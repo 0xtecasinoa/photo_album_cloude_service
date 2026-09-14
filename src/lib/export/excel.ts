@@ -37,6 +37,7 @@ export function formatJstDateTime(d: Date): string {
 export function photoRowValues(photo: LedgerPhoto, index: number): (string | number)[] {
   return [
     index + 1,
+    '', // 写真列。画像は addImage で重ねるため、値は空のまま。
     formatJstDate(photo.takenAt),
     photo.category ?? '',
     photo.workType ?? '',
@@ -51,9 +52,13 @@ export function photoRowValues(photo: LedgerPhoto, index: number): (string | num
 }
 
 const HEADERS = [
-  'No.', '撮影年月日', '写真区分', '工種', '種別', '細別',
+  'No.', '写真', '撮影年月日', '写真区分', '工種', '種別', '細別',
   '写真タイトル', '撮影箇所', '施工管理値', '請負者説明文', '代表写真',
 ];
+
+/** 写真列のセルサイズ（Excel の列幅・行高の単位）。 */
+const PHOTO_COL_WIDTH = 30;
+const PHOTO_ROW_HEIGHT = 96;
 
 /** 雛形に差し込むための値。{{工事名}} などのキーで参照されます。 */
 export function templateValues(data: LedgerData): Record<string, string> {
@@ -150,7 +155,7 @@ export async function buildLedgerWorkbook(
   });
   headerRow.height = 22;
 
-  const widths = [6, 14, 16, 14, 14, 14, 24, 18, 16, 30, 10];
+  const widths = [6, PHOTO_COL_WIDTH, 14, 16, 14, 14, 14, 24, 18, 16, 30, 10];
   widths.forEach((w, i) => (sheet.getColumn(i + 1).width = w));
 
   photos.forEach((photo, i) => {
@@ -158,9 +163,25 @@ export async function buildLedgerWorkbook(
     photoRowValues(photo, i).forEach((v, c) => {
       const cell = row.getCell(c + 1);
       cell.value = v;
-      cell.alignment = { vertical: 'middle', wrapText: c === 9 };
+      cell.alignment = { vertical: 'middle', wrapText: c === 10 };
       cell.border = { top: { style: 'hair' }, bottom: { style: 'hair' }, left: { style: 'hair' }, right: { style: 'hair' } };
     });
+
+    /*
+     * 写真そのものを差し込む。
+     * 写真のない「工事写真台帳」は提出物として成立しないため、
+     * 実体が渡ってきている場合は必ずセルに載せる。
+     */
+    if (photo.bytes) {
+      row.height = PHOTO_ROW_HEIGHT;
+      const imageId = workbook.addImage({ buffer: photo.bytes as unknown as ArrayBuffer, extension: 'jpeg' });
+      sheet.addImage(imageId, {
+        // 列・行は 0 始まり。写真列は B 列（index 1）。
+        tl: { col: 1.05, row: 6 + i + 0.08 },
+        ext: { width: 196, height: 120 },
+        editAs: 'oneCell',
+      });
+    }
   });
 
   return workbook;

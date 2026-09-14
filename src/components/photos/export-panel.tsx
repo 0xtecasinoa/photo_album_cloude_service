@@ -35,27 +35,42 @@ export function ExportPanel({
   projectId,
   totalPhotos,
   nonCompliant,
+  isPublicWorks,
+  canExportExcel,
+  canExportPdf,
+  canExportNouhin,
 }: {
   projectId: string;
   totalPhotos: number;
-  nonCompliant: { id: string; reason: string }[];
+  nonCompliant: { id: string; reason: string; label: string; takenAt: string | null }[];
+  isPublicWorks: boolean;
+  canExportExcel: boolean;
+  canExportPdf: boolean;
+  canExportNouhin: boolean;
 }) {
-  const [format, setFormat] = useState<Format>('pdf');
+  const allowed = FORMATS.filter((f) =>
+    f.key === 'pdf' ? canExportPdf : f.key === 'excel' ? canExportExcel : canExportNouhin,
+  );
+  const [format, setFormat] = useState<Format>(allowed[0]?.key ?? 'pdf');
   const [perPage, setPerPage] = useState(4);
-  const [strictMode, setStrictMode] = useState(true);
+  // 民間工事では適合チェックの対象外なので、既定を OFF にしておく。
+  const [strictMode, setStrictMode] = useState(isPublicWorks);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // 電子納品モードのときだけ、不適合写真が出力を止める。
   const blocked = strictMode && format === 'nouhin' && nonCompliant.length > 0;
-  const outputCount = blocked ? totalPhotos - nonCompliant.length : totalPhotos;
+  const remaining = totalPhotos - nonCompliant.length;
 
-  async function download() {
+  async function download(options: { excludeNonCompliant?: boolean } = {}) {
     setBusy(true);
     setError(null);
     try {
       const qs = new URLSearchParams({ perPage: String(perPage) });
       if (!strictMode) qs.set('mode', 'internal');
+      if (options.excludeNonCompliant) {
+        qs.set('exclude', nonCompliant.map((p) => p.id).join(','));
+      }
       const res = await fetch(`/api/projects/${projectId}/export/${format}?${qs}`);
 
       if (!res.ok) {
@@ -82,6 +97,16 @@ export function ExportPanel({
     } finally {
       setBusy(false);
     }
+  }
+
+  if (allowed.length === 0) {
+    return (
+      <div className="px-8 pt-8 xl:px-[31px]">
+        <p className="text-ink-muted rounded-[10px] bg-surface-sunken px-6 py-8 text-[13px]">
+          出力する権限がありません。管理者にお問い合わせください。
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -117,17 +142,35 @@ export function ExportPanel({
           <p className="mt-4 text-[14px] leading-[1.9] text-ink">
             電子納品モードON時は、デジタル署名が検証できない写真（外部加工写真や署名なしレポート写真）が混ざっている場合、出力が自動ストップします。
           </p>
-          <ul className="border-danger/45 mt-5 space-y-2 rounded-[8px] border bg-white px-5 py-4">
+          <ul className="border-danger/45 divide-danger/20 mt-5 divide-y rounded-[8px] border bg-white px-5">
             {nonCompliant.map((p) => (
-              <li key={p.id} className="flex items-center justify-between gap-4 text-[13px]">
-                <span className="text-ink">・{p.reason}</span>
+              <li key={p.id} className="flex items-start justify-between gap-4 py-3 text-[13px]">
+                <span className="min-w-0">
+                  <span className="block truncate font-bold text-ink">{p.label}</span>
+                  <span className="text-ink-muted block text-[12px]">
+                    {p.takenAt ? `${p.takenAt}　/　` : ''}{p.reason}
+                  </span>
+                </span>
                 <span className="text-danger shrink-0 font-bold">要除外</span>
               </li>
             ))}
           </ul>
-          <p className="text-danger mt-5 text-[14px] font-bold">
-            対象：対象の写真を除外するか、社内用モードOFFに切り替えて出力してください。
-          </p>
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <Button
+              variant="primary"
+              size="lg"
+              disabled={busy || remaining === 0}
+              onClick={() => download({ excludeNonCompliant: true })}
+            >
+              {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <FileDown className="size-4" aria-hidden />}
+              {nonCompliant.length} 枚を除外して出力（残り {remaining} 枚）
+            </Button>
+            <p className="text-ink text-[13px]">
+              {remaining === 0
+                ? '適合する写真がないため、除外しての出力はできません。'
+                : '除外した写真は成果品に含まれません。社内用モードOFFなら全枚数を出力できます。'}
+            </p>
+          </div>
         </div>
       )}
 
@@ -135,7 +178,7 @@ export function ExportPanel({
         <h2 className="text-brand text-[17px] font-bold">1: 出力形式とページ体裁の選択</h2>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3" role="radiogroup" aria-label="出力形式">
-          {FORMATS.map((f) => (
+          {allowed.map((f) => (
             <button
               key={f.key}
               type="button"
@@ -197,11 +240,16 @@ export function ExportPanel({
 
       <div className="mt-10 flex flex-wrap items-center justify-between gap-5 pb-16">
         <p className="text-brand text-[17px] font-bold">
-          出力対象：全 {outputCount} 枚の写真台帳
+          出力対象：全 {totalPhotos} 枚の写真台帳
+          {blocked && (
+            <span className="text-danger ml-3 text-[14px]">
+              （うち {nonCompliant.length} 枚が電子納品不適合）
+            </span>
+          )}
         </p>
-        <Button variant="primary" size="lg" disabled={blocked || busy} onClick={download}>
+        <Button variant="primary" size="lg" disabled={blocked || busy} onClick={() => download()}>
           {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <FileDown className="size-4" aria-hidden />}
-          {busy ? '出力中…' : `${FORMATS.find((f) => f.key === format)!.glyph} で台帳を出力ダウンロード`}
+          {busy ? '出力中…' : `${FORMATS.find((f) => f.key === format)?.glyph ?? ''} で台帳を出力ダウンロード`}
         </Button>
       </div>
     </div>

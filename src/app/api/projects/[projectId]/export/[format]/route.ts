@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { exportLedgerExcel } from '@/lib/export/excel';
 import { exportLedgerPdf } from '@/lib/export/pdf';
-import { buildDenshiNouhinZip, NonCompliantPhotoError } from '@/lib/export/denshi-nouhin';
-import { loadLedgerData, loadCapabilities } from '@/lib/export/ledger-source';
+import { buildDenshiNouhinZip, NonCompliantPhotoError, MissingPhotoFileError } from '@/lib/export/denshi-nouhin';
+import { loadLedgerData } from '@/lib/export/ledger-source';
+import { getSessionContext } from '@/lib/auth/session';
+import { capabilitiesForProject } from '@/lib/queries/projects';
 import { recordAudit, auditRequestInfo } from '@/lib/audit';
 import type { Capability } from '@/lib/acl/capabilities';
 import type { PhotosPerPage } from '@/lib/export/types';
@@ -59,14 +61,41 @@ export async function GET(
     return NextResponse.json({ error: 'ログインが必要です。' }, { status: 401 });
   }
 
-  const capabilities = await loadCapabilities(session.user.id, projectId);
+  const ctx = await getSessionContext();
+  if (!ctx) return NextResponse.json({ error: 'ログインが必要です。' }, { status: 401 });
+
+  const capabilities = await capabilitiesForProject(ctx.user.id, projectId);
   if (!capabilities.has(spec.capability)) {
     return NextResponse.json({ error: 'この操作を行う権限がありません。' }, { status: 403 });
   }
 
-  const data = await loadLedgerData(projectId);
-
+  /*
+   * どの形式でも写真の実体は要る。台帳に写真が載っていなければ提出物にならない。
+   * ただし読むレンディションは分ける。電子納品は原本でなければ成果品として
+   * 認められないが、PDF と Excel は表示用で足りる（原本を全部読むと
+   * 大きな現場でメモリを使い切る）。
+   */
   const url = new URL(request.url);
+  // 不適合写真を外して出す運用があるため、除外 id を受け取る。
+  const excludeIds = (url.searchParams.get('exclude') ?? '')
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .slice(0, 5000);
+
+  const data = await loadLedgerData(ctx.organization.id, projectId, {
+    includeBytes: true,
+    bytesFrom: format === 'nouhin' ? 'original' : 'display',
+    excludeIds,
+  });
+  if (!data) {
+    return NextResponse.json({ error: '現場が見つかりません。' }, { status: 404 });
+  }
+
+  if (data.photos.length === 0) {
+    return NextResponse.json({ error: '出力対象の写真がありません。' }, { status: 400 });
+  }
+
   const perPageRaw = Number(url.searchParams.get('perPage') ?? 4);
   const photosPerPage = (PER_PAGE.has(perPageRaw) ? perPageRaw : 4) as PhotosPerPage;
   // 社内用モードは適合チェックを外す。公共工事の提出物では使わせない。
@@ -83,16 +112,16 @@ export async function GET(
     }
 
     await recordAudit({
-      organizationId: session.user.organizationId,
-      actorId: session.user.id,
-      actorName: session.user.name,
-      actorEmail: session.user.email,
+      organizationId: ctx.organization.id,
+      actorId: ctx.user.id,
+      actorName: ctx.user.name,
+      actorEmail: ctx.user.email,
       action: spec.audit,
       targetType: 'project',
       targetId: projectId,
       targetLabel: data.project.name,
       projectId,
-      metadata: { photoCount: data.photos.length, photosPerPage, internalMode },
+      metadata: { photoCount: data.photos.length, photosPerPage, internalMode, excludedCount: excludeIds.length },
       ...auditRequestInfo(request),
     });
 
@@ -106,6 +135,9 @@ export async function GET(
       },
     });
   } catch (error) {
+    if (error instanceof MissingPhotoFileError) {
+      return NextResponse.json({ error: error.message, photos: error.photos }, { status: 422 });
+    }
     if (error instanceof NonCompliantPhotoError) {
       // 適合しない写真がある場合は 409。画面側でどれを外すか案内できるよう詳細を返す。
       return NextResponse.json(

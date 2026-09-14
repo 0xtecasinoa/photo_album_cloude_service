@@ -41,8 +41,19 @@ export function chunk<T>(items: T[], size: number): T[][] {
   return out;
 }
 
+/**
+ * 写真の埋め込み先。
+ *
+ * Chromium は setContent で開いた about:blank から file:// を読めないため、
+ * data URI で渡します。呼び出し側が resolveImage を渡した場合はそちらを優先。
+ */
+function defaultResolveImage(photo: LedgerPhoto): string | null {
+  if (!photo.bytes) return null;
+  return `data:image/jpeg;base64,${photo.bytes.toString('base64')}`;
+}
+
 function photoCell(photo: LedgerPhoto, options: PdfExportOptions): string {
-  const src = options.resolveImage?.(photo) ?? null;
+  const src = options.resolveImage?.(photo) ?? defaultResolveImage(photo);
   const img = src
     ? `<img class="shot" src="${escapeHtml(src)}" alt="">`
     : '<div class="shot shot--empty"></div>';

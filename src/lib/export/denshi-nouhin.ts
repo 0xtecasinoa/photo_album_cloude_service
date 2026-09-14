@@ -76,6 +76,23 @@ export function findNonCompliant(photos: LedgerPhoto[]): { id: string; reason: s
   return problems;
 }
 
+/**
+ * 写真の実体が取得できなかった場合のエラー。
+ *
+ * PHOTO.XML には載っているのに PIC に実体がない ZIP は、発注者の
+ * チェックで必ず弾かれます。黙って欠けたまま出すほうが被害が大きいので、
+ * ここで止めます。
+ */
+export class MissingPhotoFileError extends Error {
+  constructor(public readonly photos: { id: string; label: string }[]) {
+    super(
+      `写真ファイルを読み込めなかった写真が ${photos.length} 枚あります。` +
+        `再アップロードのうえ、もう一度出力してください。`,
+    );
+    this.name = 'MissingPhotoFileError';
+  }
+}
+
 export type PhotoXmlOptions = {
   /** 適用要領基準。既定は APPLICABLE_STANDARD。 */
   standard?: string;
@@ -167,6 +184,12 @@ export async function buildDenshiNouhinZip(
     if (problems.length > 0) throw new NonCompliantPhotoError(problems);
   }
 
+  // 実体のない写真が1枚でもあれば成果品として成立しないため、組み立てる前に止める。
+  const missing = data.photos
+    .filter((p) => !p.bytes)
+    .map((p) => ({ id: p.id, label: p.title || p.originalFilename || p.id }));
+  if (missing.length > 0) throw new MissingPhotoFileError(missing);
+
   const xml = buildPhotoXml(data, options);
 
   const archive = new ZipArchive({ zlib: { level: 9 } });
@@ -184,9 +207,8 @@ export async function buildDenshiNouhinZip(
 
   let draSerial = 0;
   data.photos.forEach((photo, i) => {
-    if (photo.bytes) {
-      archive.append(photo.bytes, { name: `${PIC_DIR}/${picFilename(i + 1)}` });
-    }
+    // bytes は上で必ず存在を確認済み。
+    archive.append(photo.bytes!, { name: `${PIC_DIR}/${picFilename(i + 1)}` });
     for (const drawing of photo.referenceDrawings ?? []) {
       draSerial += 1;
       // 実体がない参考図は XML には載るが DRA には入らない。呼び出し側が

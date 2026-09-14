@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import iconv from 'iconv-lite';
 import {
   buildPhotoXml, encodePhotoXml, buildDenshiNouhinZip, findNonCompliant,
-  picFilename, draFilename, nouhinDate, NonCompliantPhotoError,
+  picFilename, draFilename, nouhinDate, NonCompliantPhotoError, MissingPhotoFileError,
   PIC_DIR, DRA_DIR,
 } from '../denshi-nouhin';
 import type { LedgerData, LedgerPhoto } from '../types';
@@ -106,6 +106,27 @@ test('社内用モードでは適合チェックを外して出力できる', as
     { enforceCompliance: false },
   );
   assert.equal(zip.subarray(0, 2).toString('ascii'), 'PK');
+});
+
+test('写真の実体が取得できないときは ZIP を作らない', async () => {
+  // PHOTO.XML には載っているのに PIC に実体がない ZIP は、発注者の
+  // チェックで弾かれる。黙って欠けたまま出すより、ここで止めるほうが安全。
+  await assert.rejects(
+    () => buildDenshiNouhinZip(data([photo(), photo({ id: 'p2', bytes: undefined })])),
+    (err: unknown) => {
+      assert.ok(err instanceof MissingPhotoFileError);
+      assert.equal(err.photos.length, 1);
+      assert.equal(err.photos[0]!.id, 'p2');
+      return true;
+    },
+  );
+});
+
+test('社内用モードでも実体のない写真は素通りさせない', async () => {
+  await assert.rejects(
+    () => buildDenshiNouhinZip(data([photo({ bytes: undefined })]), { enforceCompliance: false }),
+    MissingPhotoFileError,
+  );
 });
 
 test('ZIP に PHOTO.XML と写真が正しいパスで入る', async () => {

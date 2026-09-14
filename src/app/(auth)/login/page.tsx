@@ -8,9 +8,9 @@ export const metadata: Metadata = { title: 'ログイン' };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string }>;
+  searchParams: Promise<{ callbackUrl?: string; invited?: string }>;
 }) {
-  const { callbackUrl } = await searchParams;
+  const { callbackUrl, invited } = await searchParams;
   // Only accept same-site paths — an absolute URL here would be an open redirect.
   const safeCallback = callbackUrl?.startsWith('/') && !callbackUrl.startsWith('//')
     ? callbackUrl
@@ -19,6 +19,11 @@ export default async function LoginPage({
   return (
     <>
       <h1 className="text-brand text-[32px] font-bold">ログイン</h1>
+      {invited && (
+        <p className="border-success/40 bg-success-tint text-success mt-6 rounded-[8px] border px-4 py-3 text-[13px]">
+          パスワードを設定しました。設定したパスワードでログインしてください。
+        </p>
+      )}
       <LoginForm callbackUrl={safeCallback} />
       <GoogleButton label="Googleでログイン" callbackUrl={safeCallback} />
       <p className="text-ink-muted mt-12 text-center text-[12px]">

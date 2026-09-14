@@ -17,6 +17,7 @@ const PUBLIC_EXACT = new Set(['/', '/contact', '/terms', '/privacy', '/forgot-pa
 const PUBLIC_PREFIXES = [
   '/login',
   '/signup',
+  '/invite', // 招待リンク — トークンで認可するためログイン不要
   '/share', // expiring external share links — authorised by token, not session
   '/api/auth',
   '/_next',

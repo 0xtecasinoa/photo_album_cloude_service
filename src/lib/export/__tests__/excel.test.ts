@@ -57,19 +57,34 @@ test('台帳ワークブックに見出しと写真行が入る', async () => {
 
   const header = sheet.getRow(6);
   assert.equal(header.getCell(1).value, 'No.');
-  assert.equal(header.getCell(2).value, '撮影年月日');
-  assert.equal(header.getCell(11).value, '代表写真');
+  assert.equal(header.getCell(2).value, '写真');
+  assert.equal(header.getCell(3).value, '撮影年月日');
+  assert.equal(header.getCell(12).value, '代表写真');
 
   const first = sheet.getRow(7);
   assert.equal(first.getCell(1).value, 1);
-  assert.equal(first.getCell(2).value, '2026/04/28');
-  assert.equal(first.getCell(3).value, '施工状況写真');
-  assert.equal(first.getCell(7).value, '下層路盤 敷均し状況');
-  assert.equal(first.getCell(11).value, '○', '代表写真は○で表示');
+  assert.equal(first.getCell(3).value, '2026/04/28');
+  assert.equal(first.getCell(4).value, '施工状況写真');
+  assert.equal(first.getCell(8).value, '下層路盤 敷均し状況');
+  assert.equal(first.getCell(12).value, '○', '代表写真は○で表示');
 
   const second = sheet.getRow(8);
   assert.equal(second.getCell(1).value, 2);
-  assert.equal(second.getCell(11).value, '', '代表写真でなければ空欄');
+  assert.equal(second.getCell(12).value, '', '代表写真でなければ空欄');
+});
+
+test('写真の実体があれば台帳に画像として差し込まれる', async () => {
+  // 写真のない工事写真台帳は提出物にならないので、実体が渡れば必ず載せる。
+  const data = sample();
+  const jpeg = Buffer.from(
+    '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==',
+    'base64',
+  );
+  data.photos = data.photos.map((p) => ({ ...p, bytes: jpeg }));
+
+  const wb = await buildLedgerWorkbook(data);
+  const sheet = wb.getWorksheet('工事写真台帳')!;
+  assert.equal(sheet.getImages().length, data.photos.length, '写真の枚数だけ画像が入る');
 });
 
 test('出力したバッファが実際に xlsx として読み戻せる', async () => {
