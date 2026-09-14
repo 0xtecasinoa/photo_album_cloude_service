@@ -1,12 +1,20 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Save, Filter, Grid3x3, Plus } from 'lucide-react';
+import { useActionState, useMemo, useState } from 'react';
+import { useFormStatus } from 'react-dom';
+import { Save, Filter, Grid3x3, Plus, Loader2, Trash2, FilePlus2, Star } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { BoardPreview } from './board-preview';
 import { cn } from '@/lib/utils';
+import {
+  saveTemplateAction,
+  deleteTemplateAction,
+  type TemplateFormState,
+} from '@/app/(app)/templates/actions';
+import type { TemplateListItem } from '@/lib/queries/blackboard-templates';
 import {
   blackboardFieldSchema,
   createDefaultLayout,
@@ -92,11 +100,89 @@ function createStandardLayout(): BlackboardLayout {
   };
 }
 
-export function BlackboardEditor() {
-  const [layout, setLayout] = useState<BlackboardLayout>(createStandardLayout);
-  const [templateName, setTemplateName] = useState('標準工事小黒板（5項目）');
+function SaveButton({ canManage }: { canManage: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" variant="primary" size="lg" disabled={pending || !canManage}>
+      {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Save className="size-4" aria-hidden />}
+      {pending ? '保存中…' : '案件メンバー全員へ配布保存'}
+    </Button>
+  );
+}
+
+export function BlackboardEditor({
+  templates,
+  canManage,
+}: {
+  templates: TemplateListItem[];
+  canManage: boolean;
+}) {
+  const [templateId, setTemplateId] = useState<string | null>(templates[0]?.id ?? null);
+  const [layout, setLayout] = useState<BlackboardLayout>(
+    () => templates[0]?.layout ?? createStandardLayout(),
+  );
+  const [templateName, setTemplateName] = useState(templates[0]?.name ?? '標準工事小黒板（5項目）');
+  const [workType, setWorkType] = useState(templates[0]?.workType ?? '');
+  const [isDefault, setIsDefault] = useState(templates[0]?.isDefault ?? templates.length === 0);
   const [selectedId, setSelectedId] = useState<string | null>('projectName');
-  const [fontFamily, setFontFamily] = useState(FONT_FAMILIES[0]!.value);
+  // 書体は各項目のスタイルに持たせる。板全体の表示だけ変えて保存すると、
+  // 撮影時の描画に反映されず「見た目と違う黒板」が写真に載ってしまう。
+  const [fontFamily, setFontFamily] = useState(
+    templates[0]?.layout.fields[0]?.valueStyle.fontFamily ?? FONT_FAMILIES[0]!.value,
+  );
+
+  const [saveState, saveAction] = useActionState<TemplateFormState, FormData>(saveTemplateAction, {});
+  const [deleteState, deleteAction] = useActionState<TemplateFormState, FormData>(deleteTemplateAction, {});
+
+  // 保存と削除は別々の状態なので、新しいほうだけを画面に出す。
+  const latest = (deleteState.at ?? 0) > (saveState.at ?? 0) ? deleteState : saveState;
+
+  /*
+   * 新規作成のあとは、保存されたテンプレートを編集対象として引き継ぐ。
+   * 続けて「保存」を押したときに、同じ内容がもう一件増えないようにするため。
+   * レンダリング中の調整で行う（effect で setState すると一度余計に描き直す）。
+   */
+  const [lastSavedId, setLastSavedId] = useState<string | null>(null);
+  if (saveState.saved && saveState.saved.id !== lastSavedId) {
+    setLastSavedId(saveState.saved.id);
+    setTemplateId(saveState.saved.id);
+  }
+
+  const loadTemplate = (id: string) => {
+    const t = templates.find((x) => x.id === id);
+    if (!t) return;
+    setTemplateId(t.id);
+    setLayout(t.layout);
+    setTemplateName(t.name);
+    setWorkType(t.workType ?? '');
+    setIsDefault(t.isDefault);
+    setFontFamily(t.layout.fields[0]?.valueStyle.fontFamily ?? FONT_FAMILIES[0]!.value);
+    setSelectedId(t.layout.fields[0]?.id ?? null);
+  };
+
+  const startNew = () => {
+    const fresh = createStandardLayout();
+    setTemplateId(null);
+    setLayout(fresh);
+    setTemplateName('新しい小黒板テンプレート');
+    setWorkType('');
+    setIsDefault(false);
+    setFontFamily(FONT_FAMILIES[0]!.value);
+    setSelectedId(fresh.fields[0]?.id ?? null);
+  };
+
+  /** 保存する値。画面で選んだ書体を全項目のスタイルへ焼き込む。 */
+  const layoutToSave = useMemo<BlackboardLayout>(
+    () => ({
+      ...layout,
+      fields: layout.fields.map((f) => ({
+        ...f,
+        labelStyle: { ...f.labelStyle, fontFamily },
+        valueStyle: { ...f.valueStyle, fontFamily },
+      })),
+    }),
+    [layout, fontFamily],
+  );
 
   const selected = useMemo(
     () => layout.fields.find((f) => f.id === selectedId) ?? null,
@@ -140,15 +226,102 @@ export function BlackboardEditor() {
       <PageHeader
         title="電子小黒板 自由作成・テンプレート設計"
         actions={
-          <Button variant="primary" size="lg">
-            <Save className="size-4" aria-hidden />
-            案件メンバー全員へ配布保存
-          </Button>
+          <form action={saveAction} className="flex items-center gap-3">
+            <input type="hidden" name="templateId" value={templateId ?? ''} />
+            <input type="hidden" name="name" value={templateName} />
+            <input type="hidden" name="workType" value={workType} />
+            <input type="hidden" name="isDefault" value={String(isDefault)} />
+            <input type="hidden" name="layout" value={JSON.stringify(layoutToSave)} />
+            <SaveButton canManage={canManage} />
+          </form>
         }
       />
 
       <div className="px-8 pt-10 xl:px-[31px]">
         <div className="mx-auto max-w-[1050px]">
+          {latest?.error && (
+            <p role="alert" className="border-danger/40 bg-danger-tint text-danger mb-6 rounded-[8px] border px-5 py-4 text-[13px]">
+              {latest.error}
+            </p>
+          )}
+          {latest?.message && (
+            <p role="status" className="border-success/40 bg-success-tint text-success mb-6 rounded-[8px] border px-5 py-4 text-[13px]">
+              {latest.message}
+            </p>
+          )}
+          {!canManage && (
+            <p className="border-border-subtle bg-surface-muted text-ink-muted mb-6 rounded-[8px] border px-5 py-4 text-[13px]">
+              テンプレートの閲覧のみ可能です。保存・削除には「電子小黒板テンプレートの管理」権限が必要です。
+            </p>
+          )}
+
+          {/* ---- 保存済みテンプレート ---- */}
+          <section className="mb-10">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-brand text-[17px] font-bold">保存済みテンプレート（{templates.length}件）</h2>
+              {canManage && (
+                <Button type="button" variant="outline" onClick={startNew}>
+                  <FilePlus2 className="size-4" aria-hidden />
+                  新しいテンプレート
+                </Button>
+              )}
+            </div>
+
+            {templates.length === 0 ? (
+              <p className="border-border-subtle text-ink-muted rounded-[10px] border border-dashed bg-white px-6 py-8 text-center text-[13px]">
+                まだテンプレートがありません。下で黒板を作り、「案件メンバー全員へ配布保存」で保存してください。
+              </p>
+            ) : (
+              <ul className="border-border-subtle divide-border-subtle divide-y overflow-hidden rounded-[10px] border bg-white">
+                {templates.map((t) => (
+                  <li
+                    key={t.id}
+                    className={cn(
+                      'flex flex-wrap items-center gap-3 px-6 py-4',
+                      t.id === templateId && 'bg-brand-tint/50',
+                    )}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => loadTemplate(t.id)}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="text-[14px] font-bold text-ink">{t.name}</span>
+                        {t.isDefault && (
+                          <Badge variant="brand" className="inline-flex items-center gap-1">
+                            <Star className="size-3" aria-hidden />既定
+                          </Badge>
+                        )}
+                        {t.id === templateId && <Badge variant="admin">編集中</Badge>}
+                      </span>
+                      <span className="text-ink-muted mt-1 block text-[12px]">
+                        {t.workType ? `${t.workType}　/　` : ''}{t.layout.fields.length} 項目
+                      </span>
+                    </button>
+                    {canManage && (
+                      <form
+                        action={deleteAction}
+                        onSubmit={(e) => {
+                          if (!confirm(`「${t.name}」を削除します。よろしいですか？`)) e.preventDefault();
+                        }}
+                      >
+                        <input type="hidden" name="templateId" value={t.id} />
+                        <button
+                          type="submit"
+                          aria-label={`${t.name} を削除`}
+                          className="text-danger hover:bg-danger-tint grid size-9 place-items-center rounded-[6px] transition-colors"
+                        >
+                          <Trash2 className="size-[18px]" aria-hidden />
+                        </button>
+                      </form>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
           <div style={{ fontFamily }}>
             <BoardPreview
               layout={layout}
@@ -177,6 +350,20 @@ export function BlackboardEditor() {
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="tpl-worktype">対象の工種（任意）</Label>
+                <Input
+                  id="tpl-worktype"
+                  className="mt-2"
+                  value={workType}
+                  placeholder="鉄筋工"
+                  onChange={(e) => setWorkType(e.target.value)}
+                />
+                <p className="text-ink-muted mt-1.5 text-[11px]">
+                  工種を入れておくと、撮影時にその工種の写真へ自動で候補として出ます。
+                </p>
               </div>
 
               <div>
@@ -230,6 +417,21 @@ export function BlackboardEditor() {
                   ))}
                 </Select>
               </div>
+
+              <label className="flex cursor-pointer items-start gap-3 md:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={isDefault}
+                  onChange={(e) => setIsDefault(e.target.checked)}
+                  className="accent-accent mt-1 size-[15px] shrink-0"
+                />
+                <span className="text-[13px] text-ink">
+                  このテンプレートを既定にする
+                  <span className="text-ink-muted mt-0.5 block text-[11px]">
+                    撮影時に最初に表示されます。既定はひとつだけで、他のテンプレートの既定は外れます。
+                  </span>
+                </span>
+              </label>
             </div>
           </section>
 
