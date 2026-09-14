@@ -125,6 +125,10 @@ const AUDIENCES = [
   {
     icon: HardHat,
     tone: 'bg-brand-ring/15 text-brand',
+    // Each card carries its own accent; the check marks follow it.
+    check: 'bg-brand-ring',
+    image: '/brand/aud-genba.webp',
+    alt: 'スマートフォンと現場用タブレットに電子黒板つきの写真が表示されている様子',
     lead: '現場監督の方へ,',
     title: '現場での撮影・記録をもっと簡単に',
     points: [
@@ -137,6 +141,9 @@ const AUDIENCES = [
   {
     icon: Building,
     tone: 'bg-success-tint text-success',
+    check: 'bg-success',
+    image: '/brand/aud-sme.webp',
+    alt: 'ノートパソコンで工事写真台帳を編集している画面',
     lead: '中小建設会社向け,',
     title: '少人数でも効率的に、確実な業務管理を',
     points: [
@@ -149,6 +156,9 @@ const AUDIENCES = [
   {
     icon: Landmark,
     tone: 'bg-accent/15 text-accent',
+    check: 'bg-accent',
+    image: '/brand/aud-enterprise.webp',
+    alt: '都市部に立ち並ぶオフィスビル群',
     lead: '大手企業の導入にも対応,',
     title: '大規模プロジェクトの厳しい要件にも対応',
     points: [
@@ -591,8 +601,13 @@ export default function LandingPage() {
                       <ul className="mt-6 space-y-3.5">
                         {a.points.map((p) => (
                           <li key={p} className="flex items-start gap-3">
-                            <span className="bg-brand-ring/25 text-brand mt-0.5 grid size-[19px] shrink-0 place-items-center rounded-full">
-                              <Check className="size-3" strokeWidth={3} aria-hidden />
+                            <span
+                              className={cn(
+                                'mt-0.5 grid size-[20px] shrink-0 place-items-center rounded-full text-white',
+                                a.check,
+                              )}
+                            >
+                              <Check className="size-3" strokeWidth={3.5} aria-hidden />
                             </span>
                             <span className="text-[13px] leading-[1.8] text-ink">{p}</span>
                           </li>
@@ -609,7 +624,14 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="from-brand/70 to-brand-soft/50 hidden h-full min-h-[200px] rounded-[10px] bg-gradient-to-br lg:block" />
+                    <Image
+                      src={a.image}
+                      alt={a.alt}
+                      width={494}
+                      height={329}
+                      sizes="(max-width: 1024px) 0px, 380px"
+                      className="hidden h-full max-h-[230px] w-full rounded-[10px] object-contain lg:block"
+                    />
                   </div>
                 </article>
               ))}
