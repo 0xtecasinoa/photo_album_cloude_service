@@ -120,24 +120,29 @@ export default function LandingPage() {
 
       <main>
         {/* ---------- Hero ---------- */}
-        <section className="relative isolate min-h-[620px] overflow-hidden lg:min-h-[860px]">
+        <section className="relative isolate overflow-hidden">
           <Image
-            src="/brand/lp-hero.webp"
+            src="/brand/hero-bg.webp"
             alt=""
             fill
             priority
             sizes="100vw"
             className="-z-10 object-cover object-center"
           />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#0B1849]/85 via-[#0B1849]/45 to-transparent" />
+          {/*
+            The background already carries a navy gradient down its left edge, so this
+            overlay only has to deepen it enough for white text to stay legible where
+            the sky is brightest. Stacking a second full-strength gradient muddies it.
+          */}
+          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#0B1849]/80 via-[#0B1849]/55 to-[#0B1849]/25 lg:bg-gradient-to-r lg:from-[#0B1849]/72 lg:via-[#0B1849]/28 lg:to-transparent" />
 
-          <div className="mx-auto max-w-[1440px] px-6 pt-[180px] pb-24 lg:px-10 lg:pt-[190px]">
-            <div className="max-w-[620px]">
+          <div className="mx-auto grid max-w-[1440px] items-center gap-12 px-6 pt-[140px] pb-20 lg:grid-cols-[minmax(0,600px)_minmax(0,1fr)] lg:gap-10 lg:px-10 lg:pt-[180px] lg:pb-28">
+            <div>
               <h1 className="text-[34px] leading-[1.35] font-bold text-white sm:text-[44px] lg:text-[52px]">
                 写真を撮るだけ。
                 <br />
                 あとの<span className="text-accent text-[1.25em]">1</span>分は、台帳が自動
-                <br />
+                <br className="hidden sm:inline" />
                 で仕上げます。
               </h1>
 
@@ -160,6 +165,16 @@ export default function LandingPage() {
                 </a>
               </div>
             </div>
+
+            <Image
+              src="/brand/hero-product.webp"
+              alt="スマートフォンの電子小黒板とパソコンの工事写真台帳が、クラウドで連携している様子"
+              width={696}
+              height={464}
+              priority
+              sizes="(max-width: 1024px) 92vw, 640px"
+              className="h-auto w-full max-w-[696px] justify-self-center lg:justify-self-end"
+            />
           </div>
         </section>
 
