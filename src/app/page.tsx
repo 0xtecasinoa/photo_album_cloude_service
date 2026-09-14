@@ -1,14 +1,12 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import {
-  HardHat, Check, ShieldCheck, Share2, Clock,
-  Camera, Cloud, Sparkles, FileSpreadsheet, FileOutput, Building, Landmark,
-} from 'lucide-react';
+import { HardHat, Check, ShieldCheck, Share2, Clock, Building, Landmark } from 'lucide-react';
 import { SiteHeader } from '@/components/marketing/site-header';
 import { SiteFooter } from '@/components/marketing/site-footer';
 import { ChalkBoard } from '@/components/marketing/chalk-board';
 import { Faq } from '@/components/marketing/faq';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: '写真を撮るだけ。あとの1分は、台帳が自動で仕上げます。',
@@ -88,11 +86,31 @@ const SHARING = [
 ];
 
 const WORKFLOW = [
-  { n: '01', title: '撮影', body: '電子黒板付きで現場写真を撮影', icon: Camera },
-  { n: '02', title: 'クラウド同期', body: '撮影した写真をクラウドへ自動同期', icon: Cloud },
-  { n: '03', title: 'AI解析', body: 'AIが電子黒板の文字を自動認識', icon: Sparkles },
-  { n: '04', title: '台帳作成', body: '写真台帳を自動で作成', icon: FileSpreadsheet },
-  { n: '05', title: '帳票出力', body: 'PDF・EXCEL形式で簡単出力', icon: FileOutput },
+  {
+    n: '01', title: '撮影', body: '電子黒板付きで現場写真を撮影',
+    image: '/brand/wf-01.webp',
+    alt: 'スマートフォンの撮影画面に電子黒板が重ねて表示されている様子',
+  },
+  {
+    n: '02', title: 'クラウド同期', body: '撮影した写真をクラウドへ自動同期',
+    image: '/brand/wf-02.webp',
+    alt: '撮影した現場写真がクラウドへアップロードされている様子',
+  },
+  {
+    n: '03', title: 'AI解析', body: 'AIが電子黒板の文字を自動認識',
+    image: '/brand/wf-03.webp',
+    alt: '工事名・工種・測点などが記入された電子黒板',
+  },
+  {
+    n: '04', title: '台帳作成', body: '写真台帳を自動で作成',
+    image: '/brand/wf-04.webp',
+    alt: '自動作成された工事写真台帳',
+  },
+  {
+    n: '05', title: '帳票出力', body: 'PDF・EXCEL形式で簡単出力',
+    image: '/brand/wf-05.webp',
+    alt: 'PDF・EXCEL・WORD 形式での出力と電子納品対応の表示',
+  },
 ];
 
 const PROMISES = [
@@ -454,22 +472,48 @@ export default function LandingPage() {
               現場で撮影した写真をAIが整理し、写真台帳の作成から帳票出力まで効率化します。
             </p>
 
-            <ol className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {WORKFLOW.map(({ n, title, body, icon: Icon }) => (
+            {/*
+              Six columns so each card can span two: 01-02-03 fill the first row, and
+              04-05 start one column in, which centres them under the row above.
+            */}
+            <ol className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-6 lg:gap-x-12">
+              {WORKFLOW.map((step, i) => (
                 <li
-                  key={n}
-                  className="border-border-subtle rounded-[14px] border bg-white p-6 shadow-[0_2px_16px_rgba(11,24,73,0.06)]"
+                  key={step.n}
+                  className={cn(
+                    'border-border-subtle relative rounded-[14px] border bg-white p-6 shadow-[0_2px_16px_rgba(11,24,73,0.06)]',
+                    'lg:col-span-2',
+                    i === 3 && 'lg:col-start-2',
+                  )}
                 >
                   <h3 className="flex items-center gap-3">
                     <span className="bg-brand-ring/20 text-brand grid size-[38px] shrink-0 place-items-center rounded-full text-[13px] font-bold">
-                      {n}
+                      {step.n}
                     </span>
-                    <span className="text-brand-link text-[18px] font-bold">{title}</span>
+                    <span className="text-brand-link text-[18px] font-bold">{step.title}</span>
                   </h3>
-                  <p className="text-ink-muted mt-4 text-[13px] leading-[1.9]">{body}</p>
-                  <div className="border-border-subtle mt-6 grid h-[130px] place-items-center rounded-[10px] border bg-surface-muted">
-                    <Icon className="text-brand/40 size-12" strokeWidth={1.2} aria-hidden />
-                  </div>
+                  <p className="text-ink-muted mt-4 text-[13px] leading-[1.9]">{step.body}</p>
+
+                  <Image
+                    src={step.image}
+                    alt={step.alt}
+                    width={306}
+                    height={239}
+                    sizes="(max-width: 640px) 88vw, (max-width: 1024px) 44vw, 310px"
+                    className="mt-6 aspect-[306/239] w-full rounded-[10px] object-contain"
+                  />
+
+                  {/* Arrows sit between cards within a row, never across the row break. */}
+                  {i !== 2 && i !== WORKFLOW.length - 1 && (
+                    <Image
+                      src="/brand/ocr-arrow.webp"
+                      alt=""
+                      width={44}
+                      height={98}
+                      aria-hidden
+                      className="absolute top-1/2 -right-9 hidden h-[40px] w-auto -translate-y-1/2 lg:block"
+                    />
+                  )}
                 </li>
               ))}
             </ol>
