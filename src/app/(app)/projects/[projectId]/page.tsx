@@ -9,6 +9,8 @@ import { UploadButton } from '@/components/photos/upload-button';
 import { requireSession } from '@/lib/auth/session';
 import { getProject, capabilitiesForProject } from '@/lib/queries/projects';
 import { listPhotos, photoFacets } from '@/lib/queries/photos';
+import { listShareLinks } from '@/lib/queries/share-links';
+import { ShareDialog } from '@/components/share/share-dialog';
 
 export async function generateMetadata({
   params,
@@ -37,7 +39,7 @@ export default async function ProjectPhotosPage({
 
   const capabilities = await capabilitiesForProject(user.id, projectId);
 
-  const [photos, facets] = await Promise.all([
+  const [photos, facets, shareLinks] = await Promise.all([
     listPhotos(projectId, {
       workType: sp.workType,
       category: sp.category,
@@ -45,6 +47,7 @@ export default async function ProjectPhotosPage({
       uploadSource: sp.source as never,
     }),
     photoFacets(projectId),
+    listShareLinks(organization.id, projectId),
   ]);
 
   return (
@@ -56,6 +59,12 @@ export default async function ProjectPhotosPage({
             <UploadButton
               projectId={projectId}
               canUpload={capabilities.has('photo.upload')}
+            />
+            <ShareDialog
+              projectId={projectId}
+              links={shareLinks}
+              canShare={capabilities.has('share.create')}
+              canRevoke={capabilities.has('share.revoke')}
             />
             {capabilities.has('export.pdf') && (
               <Link
