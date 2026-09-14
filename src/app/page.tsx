@@ -6,6 +6,7 @@ import { SiteHeader } from '@/components/marketing/site-header';
 import { SiteFooter } from '@/components/marketing/site-footer';
 import { ChalkBoard } from '@/components/marketing/chalk-board';
 import { Faq } from '@/components/marketing/faq';
+import { ConnectedSystem } from '@/components/marketing/connected-system';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -493,7 +494,7 @@ export default function LandingPage() {
                 >
                   <h3 className="flex items-center gap-3">
                     {/* Disc grows with the numeral so it does not look cramped. */}
-                    <span className="bg-brand-ring grid size-[44px] shrink-0 place-items-center rounded-full text-[17px] font-bold text-white">
+                    <span className="bg-brand-ring grid size-[44px] shrink-0 place-items-center rounded-full text-[24px] font-bold text-white">
                       {step.n}
                     </span>
                     <span className="text-brand-link text-[18px] font-bold">{step.title}</span>
@@ -557,6 +558,9 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* ---------- One connected system ---------- */}
+        <ConnectedSystem />
 
         {/* ---------- Audiences ---------- */}
         <section id="delivery" className="bg-surface-muted">
