@@ -13,6 +13,7 @@ import sharp from 'sharp';
 import { db } from './index';
 import { organizations, users, projects, projectMembers, albums, photos } from './schema';
 import { ensureSystemRoles, slugify } from '@/lib/auth/provision';
+import { PLANS } from '@/lib/plans';
 import { storage } from '@/lib/storage';
 import { storageKeys } from '@/lib/storage/keys';
 import { processPhoto } from '@/lib/photo/process';
@@ -133,8 +134,12 @@ async function main() {
       name: ORG_NAME,
       slug: slugify('yamato-kensetsu'),
       plan: 'genba_pro',
-      storageUsedBytes: 128 * 1024 ** 3,
-      storageQuotaBytes: 500 * 1024 ** 3,
+      // 枠はプランの定義から取る。画面のカードと違う数字を入れると、
+      // 「100GBと書いてあるのに表示は500GB」という食い違いになる。
+      seatLimit: PLANS.genba_pro.seatLimit,
+      storageQuotaBytes: PLANS.genba_pro.storageQuotaBytes,
+      // 使用量は写真を入れたあとに実測値で埋める。作り話の数字を入れない。
+      storageUsedBytes: 0,
     })
     .returning({ id: organizations.id });
   const organizationId = org!.id;
@@ -237,6 +242,12 @@ async function main() {
     });
   }
   await db.insert(photos).values(rows);
+
+  const usedBytes = rows.reduce((sum, r) => sum + (r.fileSize ?? 0), 0);
+  await db
+    .update(organizations)
+    .set({ storageUsedBytes: usedBytes })
+    .where(eq(organizations.id, organizationId));
 
   await db.update(projects).set({ photoCount: rows.length }).where(eq(projects.id, projectId));
   await db.update(albums).set({ photoCount: rows.length }).where(eq(albums.id, album!.id));

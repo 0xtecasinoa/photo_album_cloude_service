@@ -5,3 +5,4 @@ export * from './photo';
 export * from './blackboard';
 export * from './share';
 export * from './audit';
+export * from './inquiry';

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { db } from '@/db';
 import { organizations, roles, users } from '@/db/schema';
 import { SYSTEM_ROLES, type SystemRoleSlug } from '@/lib/acl/capabilities';
+import { PLANS, TRIAL_DAYS } from '@/lib/plans';
 
 /**
  * 組織とユーザーの新規作成。
@@ -10,6 +11,23 @@ import { SYSTEM_ROLES, type SystemRoleSlug } from '@/lib/acl/capabilities';
  * サインアップとシード処理の両方から使います。ロールの作成漏れを防ぐため、
  * 組織を作る経路はここに一本化しています。
  */
+
+/**
+ * 新しい組織の初期状態。
+ *
+ * plan だけ 'trial' にして期限を入れないと、終わらないトライアルになり、
+ * 設定画面にも残り日数が出ません。枠もプランの定義から取ります。
+ */
+function newOrganizationDefaults(name: string) {
+  return {
+    name,
+    slug: slugify(name),
+    plan: 'trial' as const,
+    trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000),
+    seatLimit: PLANS.trial.seatLimit,
+    storageQuotaBytes: PLANS.trial.storageQuotaBytes,
+  };
+}
 
 export class EmailTakenError extends Error {
   constructor() {
@@ -84,7 +102,7 @@ export async function signUp(input: SignUpInput): Promise<SignUpResult> {
   return db.transaction(async (tx) => {
     const [org] = await tx
       .insert(organizations)
-      .values({ name: companyName, slug: slugify(companyName), plan: 'trial' })
+      .values(newOrganizationDefaults(companyName))
       .returning({ id: organizations.id });
 
     const organizationId = org!.id;
@@ -141,7 +159,7 @@ export async function ensureOrganizationForUser(userId: string, displayName?: st
 
   const [org] = await db
     .insert(organizations)
-    .values({ name: companyName, slug: slugify(companyName), plan: 'trial' })
+    .values(newOrganizationDefaults(companyName))
     .returning({ id: organizations.id });
 
   const roleIds = await ensureSystemRoles(org!.id);

@@ -7,6 +7,7 @@ import { auth } from '@/auth';
 import { getSessionContext } from '@/lib/auth/session';
 import { capabilitiesForProject } from '@/lib/queries/projects';
 import { processPhoto } from '@/lib/photo/process';
+import { addStorageUsed } from '@/lib/queries/photos';
 import { storage, storageKeys } from '@/lib/storage';
 import { recordAudit, auditRequestInfo } from '@/lib/audit';
 import { env } from '@/lib/env';
@@ -65,6 +66,7 @@ export async function POST(
   }
 
   const created: { id: string; filename: string }[] = [];
+  let uploadedBytes = 0;
   const skipped: { filename: string; reason: string }[] = [];
 
   for (const file of files) {
@@ -139,6 +141,7 @@ export async function POST(
       });
 
       created.push({ id: photoId, filename: file.name });
+      uploadedBytes += bytes.byteLength;
     } catch (error) {
       console.error('[upload] failed', { filename: file.name, error });
       skipped.push({ filename: file.name, reason: '読み込みに失敗しました' });
@@ -146,6 +149,10 @@ export async function POST(
   }
 
   if (created.length > 0) {
+    // サイドバーはこのカウンタを読む。取り込みと一緒に動かさないと
+    // 「使った覚えのない容量」が表示され続ける。
+    await addStorageUsed(ctx.organization.id, uploadedBytes);
+
     await recordAudit({
       organizationId: ctx.organization.id,
       actorId: ctx.user.id,

@@ -1,86 +1,114 @@
 import type { Metadata } from 'next';
-import { UserPlus } from 'lucide-react';
+import { Users, HardDrive, FolderOpen, CalendarClock } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { InviteMemberDialog } from '@/components/members/invite-member-dialog';
+import { PlanCards } from '@/components/settings/plan-cards';
+import { requireSession } from '@/lib/auth/session';
+import { listOrgRoles } from '@/lib/queries/members';
+import { getOrganizationPlanState } from '@/lib/queries/organization';
+import { planName, trialDaysLeft } from '@/lib/plans';
+import { formatBytes, formatDateOnly } from '@/lib/utils';
 
 export const metadata: Metadata = { title: '設定・プラン' };
 
-type Plan = {
-  name: string;
-  audience: string;
-  price: string;
-  priceNote: string;
-  features: string[];
-  cta: string;
-  ctaVariant: 'outline' | 'accent';
-  featured?: boolean;
-  ribbon?: string;
-};
+export default async function SettingsPlanPage() {
+  const { organization, capabilities } = await requireSession();
 
-const PLANS: Plan[] = [
-  {
-    name: 'フリープラン',
-    audience: '個人事業主・1現場お試し作成向け',
-    price: '¥0',
-    priceNote: '永久無料',
-    features: [
-      '案件作成数: 1案件',
-      '写真保存数: 最大100枚',
-      '電子小黒板編集・PDF台帳出力',
-      'スマホ横持ちアプリ撮影',
-    ],
-    cta: 'ヘルプページを見る',
-    ctaVariant: 'outline',
-  },
-  {
-    name: '現場プロ クラウド',
-    audience: '小〜中規模建設会社・複数現場同時進行',
-    price: '¥9,800',
-    priceNote: '月（税別）',
-    features: [
-      '案件作成数：無制限',
-      'クラウドストレージ：100GB（約5万枚）',
-      'AI図面OCR & 工程自動振り分け',
-      '6桁招待コードで協力会社と無制限参加',
-      '電子納品（CALS/EC ZIP）完全出力',
-    ],
-    cta: '14日間無料トライアルを開始',
-    ctaVariant: 'accent',
-    featured: true,
-    ribbon: '一番人気★現場オススメ',
-  },
-  {
-    name: 'ゼネコン・企業パック',
-    audience: '大手ゼネコン・専用サーバー・SSO連携',
-    price: 'お問い合わせ',
-    priceNote: '年間契約',
-    features: [
-      '容量無制限 & 専任サポート',
-      'SAML / Azure AD SSO 連携',
-      '基幹システム連携（各種ソフト）API連携',
-      'セキュリティ監査ログ & 閲覧ログ 外部保管',
-    ],
-    cta: '法人問い合わせフォーム',
-    ctaVariant: 'outline',
-  },
-];
+  const [roles, state] = await Promise.all([
+    capabilities.has('member.invite') ? listOrgRoles(organization.id) : Promise.resolve([]),
+    getOrganizationPlanState(organization.id),
+  ]);
 
-export default function SettingsPlanPage() {
+  const onTrial = state?.plan === 'trial';
+  const daysLeft = trialDaysLeft(state?.trialEndsAt ?? null);
+
+  const storagePct =
+    state && state.storageQuotaBytes > 0
+      ? Math.min(100, Math.round((state.storageUsedBytes / state.storageQuotaBytes) * 100))
+      : 0;
+
   return (
     <>
       <PageHeader
         title="設定・プラン"
         actions={
-          <Button variant="primary" size="lg">
-            <UserPlus className="size-4" aria-hidden />
-            メンバーを招待
-          </Button>
+          <InviteMemberDialog roles={roles} canInvite={capabilities.has('member.invite')} />
         }
       />
 
-      <div className="px-8 pt-12 xl:px-[31px]">
-        <div className="mx-auto max-w-[1090px] text-center">
+      <div className="px-8 pt-8 pb-16 xl:px-[31px]">
+        {/* ---- 現在のご契約 ---- */}
+        {state && (
+          <section className="border-border-subtle rounded-[14px] border bg-white px-7 py-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <div>
+                <p className="text-ink-muted text-[12px]">{organization.name}　/　現在のご契約</p>
+                <h2 className="text-brand mt-1 text-[22px] font-bold">{planName(state.plan)}</h2>
+              </div>
+              {onTrial && state.trialEndsAt && (
+                <p className="border-accent/45 bg-accent/10 text-ink flex items-center gap-2 rounded-[8px] border px-4 py-2 text-[12px]">
+                  <CalendarClock className="text-accent size-4" aria-hidden />
+                  {formatDateOnly(state.trialEndsAt)} まで（残り {daysLeft} 日）
+                </p>
+              )}
+            </div>
+
+            <dl className="mt-6 grid gap-5 sm:grid-cols-3">
+              <div className="border-border-subtle rounded-[10px] border px-5 py-4">
+                <dt className="text-ink-muted flex items-center gap-2 text-[12px]">
+                  <Users className="text-brand-link size-4" aria-hidden />
+                  メンバー
+                </dt>
+                <dd className="tabular mt-2 text-[20px] font-bold text-ink">
+                  {state.seatsUsed}
+                  <span className="text-ink-muted text-[13px] font-normal"> / {state.seatLimit} 名</span>
+                </dd>
+              </div>
+
+              <div className="border-border-subtle rounded-[10px] border px-5 py-4">
+                <dt className="text-ink-muted flex items-center gap-2 text-[12px]">
+                  <HardDrive className="text-brand-link size-4" aria-hidden />
+                  保存容量
+                </dt>
+                <dd className="tabular mt-2 text-[20px] font-bold text-ink">
+                  {formatBytes(state.storageUsedBytes)}
+                  <span className="text-ink-muted text-[13px] font-normal">
+                    {' '}/ {formatBytes(state.storageQuotaBytes)}
+                  </span>
+                </dd>
+                <div
+                  className="bg-surface-sunken mt-2.5 h-1.5 overflow-hidden rounded-full"
+                  role="progressbar"
+                  aria-valuenow={storagePct}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="保存容量の使用率"
+                >
+                  <div
+                    className={storagePct >= 90 ? 'bg-danger h-full' : 'bg-brand-link h-full'}
+                    style={{ width: `${storagePct}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="border-border-subtle rounded-[10px] border px-5 py-4">
+                <dt className="text-ink-muted flex items-center gap-2 text-[12px]">
+                  <FolderOpen className="text-brand-link size-4" aria-hidden />
+                  現場・写真
+                </dt>
+                <dd className="tabular mt-2 text-[20px] font-bold text-ink">
+                  {state.projectCount}
+                  <span className="text-ink-muted text-[13px] font-normal"> 現場　/　</span>
+                  {state.photoCount.toLocaleString('ja-JP')}
+                  <span className="text-ink-muted text-[13px] font-normal"> 枚</span>
+                </dd>
+              </div>
+            </dl>
+          </section>
+        )}
+
+        {/* ---- プラン ---- */}
+        <div className="mx-auto mt-16 max-w-[1090px] text-center">
           <h2 className="text-brand inline text-[26px] leading-[1.5] font-bold sm:text-[30px]">
             {/* The gold rule sits behind the text baseline in the design. */}
             <span className="bg-accent/85 box-decoration-clone px-3 py-1 text-white">
@@ -94,56 +122,12 @@ export default function SettingsPlanPage() {
           </p>
         </div>
 
-        <div className="mt-14 grid items-start gap-6 lg:grid-cols-3">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.name}
-              className={cn(
-                'relative rounded-[16px] border-2 px-7 pb-9 text-center',
-                plan.featured
-                  ? 'border-accent bg-white pt-12 shadow-[0_4px_24px_rgba(240,174,30,0.18)] lg:-mt-6'
-                  : 'border-brand-ring/45 bg-brand-ring/8 pt-9',
-              )}
-            >
-              {plan.ribbon && (
-                <span className="bg-accent absolute -top-[22px] left-1/2 -translate-x-1/2 rounded-[30px] px-6 py-2.5 text-[13px] font-bold whitespace-nowrap text-white">
-                  {plan.ribbon}
-                </span>
-              )}
-
-              <h3
-                className={cn(
-                  'text-[22px] font-bold',
-                  plan.featured ? 'text-ink' : 'text-brand-link',
-                )}
-              >
-                {plan.name}
-              </h3>
-              <div className="border-border-subtle mt-4 border-t pt-4">
-                <p className="text-ink-muted text-[12px]">{plan.audience}</p>
-              </div>
-
-              <p className="mt-6 flex items-baseline justify-center gap-2">
-                <span className="text-[34px] leading-none font-bold text-ink">{plan.price}</span>
-                <span className="text-ink-muted text-[12px]">/ {plan.priceNote}</span>
-              </p>
-
-              <ul className="mt-7 space-y-3 text-[12px] text-ink">
-                {plan.features.map((f) => (
-                  <li key={f}>{f}</li>
-                ))}
-              </ul>
-
-              <Button
-                variant={plan.ctaVariant}
-                size="lg"
-                className={cn('mt-9 w-full', plan.ctaVariant === 'accent' && 'text-white')}
-              >
-                {plan.cta}
-              </Button>
-            </div>
-          ))}
-        </div>
+        <PlanCards
+          currentPlan={state?.plan ?? 'free'}
+          trialEndsAt={state?.trialEndsAt ?? null}
+          trialUsed={Boolean(state?.trialEndsAt)}
+          canManageBilling={capabilities.has('org.billing')}
+        />
       </div>
     </>
   );

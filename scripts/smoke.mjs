@@ -43,6 +43,9 @@ await page.waitForURL(/\/dashboard/, { timeout: 30000 }).catch(() => {});
 check('ログインできる', new URL(page.url()).pathname === '/dashboard', page.url().replace(BASE, ''));
 const jsErrors = [];
 page.on('pageerror', (e) => jsErrors.push(e.message));
+// 取り消しや降格の confirm() を通す。既定では自動で「キャンセル」され、
+// 操作が実行されないまま「動いていない」ように見えてしまう。
+page.on('dialog', (d) => d.accept());
 
 const boardCells = () =>
   page.evaluate(() => document.querySelector('[style*="grid-template-rows"]')?.children.length ?? 0);
@@ -197,6 +200,58 @@ try {
   check(
     '自分自身は停止できない',
     await selfRow.locator('button[aria-label="自分自身は停止できません"]').isDisabled(),
+  );
+
+  // ---------- 設定・プラン ----------
+  await page.goto(`${BASE}/settings`, { waitUntil: 'load' });
+  await page.waitForTimeout(1500);
+
+  const planHeading = await page.locator('section h2').first().innerText();
+  check('現在のご契約が実データで出る', planHeading.trim().length > 0, planHeading.trim());
+  check('ご利用中のプランが1つだけ印される', (await page.locator('text=ご利用中のプラン').count()) === 1);
+
+  // サイドバーの容量表示が、契約パネルの実測値と一致していること。
+  const panelStorage = (await page.locator('section dd').nth(1).innerText()).replace(/\s+/g, '');
+  const sidebarStorage = (await page.locator('text=/GB（|MB（/').first().innerText()).replace(/\s+/g, '');
+  check(
+    'サイドバーと契約パネルの容量が一致する',
+    sidebarStorage.startsWith(panelStorage.split('/')[0]),
+    `${sidebarStorage} / ${panelStorage}`,
+  );
+
+  await page.getByRole('button', { name: 'メンバーを招待' }).click();
+  await page.waitForTimeout(600);
+  check('設定画面からメンバーを招待できる', (await page.getByRole('dialog').count()) > 0);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
+  // 枠が縮む変更は、いまの利用量が収まるか先に確かめる。
+  await page.getByRole('button', { name: 'フリープランに変更' }).click();
+  await page.waitForTimeout(1800);
+  const downgrade = await page.getByRole('alert').first().innerText().catch(() => '');
+  check(
+    '人数が収まらないプランへは下げられない',
+    downgrade.includes('上限'),
+    downgrade.trim().slice(0, 40),
+  );
+
+  // ---------- お問い合わせ ----------
+  await page.goto(`${BASE}/contact?plan=enterprise`, { waitUntil: 'load' });
+  await page.waitForTimeout(1200);
+  check(
+    '料金表から来たプランが引き継がれる',
+    (await page.locator('text=についてのお問い合わせ').count()) > 0,
+  );
+  check('ログイン中は会社名が埋まる', (await page.inputValue('#company')).length > 0);
+
+  await page.fill('#name', 'スモーク 太郎');
+  await page.fill('#email', 'smoke@example.co.jp');
+  await page.selectOption('#topic', 'デモのご予約');
+  await page.click('button[type=submit]');
+  await page.waitForTimeout(2500);
+  check(
+    'お問い合わせを送信できる',
+    (await page.locator('text=お問い合わせを受け付けました').count()) > 0,
   );
 
   // ---------- サービス紹介ページ ----------

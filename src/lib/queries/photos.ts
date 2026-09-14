@@ -1,6 +1,6 @@
-import { and, asc, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { photos, users } from '@/db/schema';
+import { photos, users, organizations } from '@/db/schema';
 import { signedReadUrl } from '@/lib/storage';
 import { toDate } from '@/lib/utils';
 
@@ -121,24 +121,74 @@ export async function getPhoto(projectId: string, photoId: string) {
 }
 
 /** 論理削除。監査ログのため行は残す。 */
+/**
+ * 組織の使用容量カウンタを動かす。
+ *
+ * サイドバーは毎回の描画で全写真を合計するわけにいかないためカウンタを読みます。
+ * 写真が増減する場所で必ず一緒に動かさないと、画面の数字が現実とずれます。
+ */
+async function shiftStorageUsed(
+  tx: typeof db,
+  organizationId: string,
+  deltaBytes: number,
+): Promise<void> {
+  if (deltaBytes === 0) return;
+  await tx
+    .update(organizations)
+    .set({
+      // 負にはしない。ずれた状態で引き算が続くと、残量が無限にあるように見える。
+      storageUsedBytes: sql`greatest(0, ${organizations.storageUsedBytes} + ${deltaBytes})`,
+      updatedAt: new Date(),
+    })
+    .where(eq(organizations.id, organizationId));
+}
+
 export async function softDeletePhotos(projectId: string, photoIds: string[], deletedById: string) {
   if (photoIds.length === 0) return 0;
-  const rows = await db
-    .update(photos)
-    .set({ deletedAt: new Date(), deletedById })
-    .where(and(eq(photos.projectId, projectId), inArray(photos.id, photoIds), isNull(photos.deletedAt)))
-    .returning({ id: photos.id });
-  return rows.length;
+
+  return db.transaction(async (tx) => {
+    const rows = await tx
+      .update(photos)
+      .set({ deletedAt: new Date(), deletedById })
+      .where(and(eq(photos.projectId, projectId), inArray(photos.id, photoIds), isNull(photos.deletedAt)))
+      .returning({ id: photos.id, fileSize: photos.fileSize, organizationId: photos.organizationId });
+
+    if (rows.length > 0) {
+      const freed = rows.reduce((sum, r) => sum + (r.fileSize ?? 0), 0);
+      await shiftStorageUsed(tx as unknown as typeof db, rows[0]!.organizationId, -freed);
+    }
+    return rows.length;
+  });
 }
 
 export async function restorePhotos(projectId: string, photoIds: string[]) {
   if (photoIds.length === 0) return 0;
-  const rows = await db
-    .update(photos)
-    .set({ deletedAt: null, deletedById: null })
-    .where(and(eq(photos.projectId, projectId), inArray(photos.id, photoIds)))
-    .returning({ id: photos.id });
-  return rows.length;
+
+  return db.transaction(async (tx) => {
+    const rows = await tx
+      .update(photos)
+      .set({ deletedAt: null, deletedById: null })
+      // 削除済みのものだけを戻す。生きている行まで拾うと容量を二重に足してしまう。
+      .where(
+        and(
+          eq(photos.projectId, projectId),
+          inArray(photos.id, photoIds),
+          isNotNull(photos.deletedAt),
+        ),
+      )
+      .returning({ id: photos.id, fileSize: photos.fileSize, organizationId: photos.organizationId });
+
+    if (rows.length > 0) {
+      const restored = rows.reduce((sum, r) => sum + (r.fileSize ?? 0), 0);
+      await shiftStorageUsed(tx as unknown as typeof db, rows[0]!.organizationId, restored);
+    }
+    return rows.length;
+  });
+}
+
+/** 取り込み時に使用容量を足す。 */
+export async function addStorageUsed(organizationId: string, bytes: number): Promise<void> {
+  await shiftStorageUsed(db, organizationId, bytes);
 }
 
 export async function updatePhotoMetadata(
