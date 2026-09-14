@@ -658,13 +658,18 @@ export default function LandingPage() {
           <div className="mx-auto max-w-[1240px] px-6 lg:px-10">
             <div className="relative isolate overflow-hidden rounded-[16px] px-6 py-20 text-center">
               <Image
-                src="/brand/lp-cta.webp"
+                src="/brand/cta-band.webp"
                 alt=""
                 fill
                 sizes="(max-width: 1240px) 100vw, 1240px"
                 className="-z-10 object-cover"
               />
-              <div className="bg-brand/85 absolute inset-0 -z-10" />
+              {/*
+                The artwork already carries its own navy tint. The old flat /85 overlay
+                is gone — stacked on top it turned the building to mud. This is only a
+                slight left-side deepening so the centred text keeps its contrast.
+              */}
+              <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#0B1849]/35 via-transparent to-[#0B1849]/20" />
 
               <h2 className="jp-phrase text-[24px] leading-[1.6] font-bold text-white sm:text-[32px]">
                 書類作成の時間を、
