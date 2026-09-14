@@ -50,3 +50,6 @@ next-env.d.ts
 
 # local file storage
 .storage/
+
+# OCR 言語データ（npm run setup:ocr で取得）
+.tessdata/

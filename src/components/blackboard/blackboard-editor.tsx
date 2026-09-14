@@ -2,9 +2,10 @@
 
 import { useActionState, useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { Save, Filter, Grid3x3, Plus, Loader2, Trash2, FilePlus2, Star } from 'lucide-react';
+import Link from 'next/link';
+import { Save, Filter, Grid3x3, Plus, Loader2, Trash2, FilePlus2, Star, ScanLine } from 'lucide-react';
 import { PageHeader } from '@/components/app/page-header';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input, Label, Select } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { BoardPreview } from './board-preview';
@@ -260,10 +261,19 @@ export function BlackboardEditor({
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-brand text-[17px] font-bold">保存済みテンプレート（{templates.length}件）</h2>
               {canManage && (
-                <Button type="button" variant="outline" onClick={startNew}>
-                  <FilePlus2 className="size-4" aria-hidden />
-                  新しいテンプレート
-                </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/templates/import"
+                    className={buttonVariants({ variant: 'outline' })}
+                  >
+                    <ScanLine className="size-4" aria-hidden />
+                    手書き看板から取り込む
+                  </Link>
+                  <Button type="button" variant="outline" onClick={startNew}>
+                    <FilePlus2 className="size-4" aria-hidden />
+                    新しいテンプレート
+                  </Button>
+                </div>
               )}
             </div>
 

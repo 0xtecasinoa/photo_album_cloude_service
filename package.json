@@ -16,7 +16,8 @@
     "test": "tsx --test \"src/**/*.test.ts\"",
     "smoke": "node scripts/smoke.mjs",
     "dev:db": "node scripts/dev-db.mjs",
-    "smoke:auth": "node scripts/smoke-auth.mjs"
+    "smoke:auth": "node scripts/smoke-auth.mjs",
+    "setup:ocr": "node scripts/setup-ocr.mjs"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",
@@ -44,6 +45,7 @@
     "react-hook-form": "^7.88.0",
     "sharp": "^0.35.4",
     "tailwind-merge": "^3.7.0",
+    "tesseract.js": "^7.0.0",
     "xmlbuilder2": "^4.0.3",
     "zod": "^4.6.4"
   },

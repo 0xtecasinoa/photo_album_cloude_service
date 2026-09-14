@@ -18,8 +18,9 @@ export function BoardPreview({
 }: {
   layout: BlackboardLayout;
   values: Record<string, string>;
-  selectedFieldId: string | null;
-  onSelectField: (id: string) => void;
+  /** 編集用。表示だけの場面（取り込み確認など）では省略する。 */
+  selectedFieldId?: string | null;
+  onSelectField?: (id: string) => void;
 }) {
   const rows = Math.max(1, ...layout.fields.map((f) => f.row + 1));
 
@@ -27,6 +28,12 @@ export function BoardPreview({
     <div
       className="relative w-full overflow-hidden"
       style={{
+        /*
+         * 文字サイズは板の幅を基準にする（cqw）。ビューポート基準にすると、
+         * 画面は広いのに板を置く欄が狭い場面で原寸のまま描かれ、
+         * 項目名が重なって読めなくなる。
+         */
+        containerType: 'inline-size',
         backgroundColor: layout.backgroundColor,
         border: `${layout.borderWidth}px solid ${layout.borderColor}`,
         borderRadius: layout.cornerRadius,
@@ -60,9 +67,10 @@ export function BoardPreview({
             field={field}
             value={values[field.key] ?? field.defaultValue}
             selected={selectedFieldId === field.id}
+            boardWidth={layout.width}
             gridLineColor={layout.gridLineColor}
             gridLineWidth={layout.gridLineWidth}
-            onSelect={() => onSelectField(field.id)}
+            onSelect={onSelectField ? () => onSelectField(field.id) : undefined}
           />
         ))}
       </div>
@@ -74,6 +82,7 @@ function BoardCell({
   field,
   value,
   selected,
+  boardWidth,
   gridLineColor,
   gridLineWidth,
   onSelect,
@@ -81,10 +90,16 @@ function BoardCell({
   field: BlackboardField;
   value: string;
   selected: boolean;
+  /** 板の設計上の幅(px)。寸法をこの幅の割合に直すために使う。 */
+  boardWidth: number;
   gridLineColor: string;
   gridLineWidth: number;
-  onSelect: () => void;
+  /** 省略すると選択できないセルになる（表示だけの場面で使う）。 */
+  onSelect?: () => void;
 }) {
+  /** 設計上の px を、板の幅に対する割合へ。板を縮めても比率が崩れない。 */
+  const u = (px: number) => `${(px / boardWidth) * 100}cqw`;
+
   const alignItems =
     field.valueStyle.verticalAlign === 'top'
       ? 'flex-start'
@@ -96,10 +111,12 @@ function BoardCell({
     <button
       type="button"
       onClick={onSelect}
-      aria-pressed={selected}
+      disabled={!onSelect}
+      aria-pressed={onSelect ? selected : undefined}
       className={cn(
-        'group relative flex min-w-0 items-center gap-4 px-4 text-left transition-shadow',
+        'group relative flex min-w-0 items-center text-left transition-shadow',
         selected && 'ring-2 ring-white/70 ring-inset',
+        !onSelect && 'cursor-default',
       )}
       style={{
         gridRow: `${field.row + 1} / span ${field.rowSpan}`,
@@ -107,6 +124,8 @@ function BoardCell({
         backgroundColor: field.cellBackgroundColor ?? 'transparent',
         borderBottom: `${gridLineWidth}px solid ${gridLineColor}`,
         alignItems,
+        gap: u(16),
+        paddingInline: u(16),
       }}
     >
       {field.showLabel && field.labelRatio > 0 && (
@@ -114,7 +133,7 @@ function BoardCell({
           className="shrink-0"
           style={{
             flexBasis: `${field.labelRatio * 100}%`,
-            fontSize: `clamp(9px, ${field.labelStyle.fontSize / 16}vw, ${field.labelStyle.fontSize}px)`,
+            fontSize: u(field.labelStyle.fontSize),
             fontWeight: field.labelStyle.fontWeight,
             fontStyle: field.labelStyle.fontStyle,
             color: field.labelStyle.color,
@@ -132,7 +151,7 @@ function BoardCell({
       <span
         className={cn('min-w-0 flex-1', field.multiline ? 'whitespace-pre-wrap' : 'truncate')}
         style={{
-          fontSize: `clamp(10px, ${field.valueStyle.fontSize / 16}vw, ${field.valueStyle.fontSize}px)`,
+          fontSize: u(field.valueStyle.fontSize),
           fontWeight: field.valueStyle.fontWeight,
           fontStyle: field.valueStyle.fontStyle,
           color: field.valueStyle.color,
