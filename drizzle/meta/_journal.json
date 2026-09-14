@@ -15,6 +15,13 @@
       "when": 1789388394771,
       "tag": "0001_jittery_the_fallen",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789399315773,
+      "tag": "0002_bent_sue_storm",
+      "breakpoints": true
     }
   ]
 }

@@ -109,8 +109,12 @@ const providers: NextAuthConfig['providers'] = [
           passwordHash: users.passwordHash,
           organizationId: users.organizationId,
           isActive: users.isActive,
+          // 会社ごと停止されている場合も入れない。運営が契約を止めたのに
+          // 社員が個別にログインできてしまう状態を作らないため。
+          organizationIsActive: organizations.isActive,
         })
         .from(users)
+        .innerJoin(organizations, eq(organizations.id, users.organizationId))
         .where(eq(users.email, email.toLowerCase()))
         .limit(1);
 
@@ -118,7 +122,9 @@ const providers: NextAuthConfig['providers'] = [
 
       // Deliberately one outcome for every failure mode — wrong password, unknown
       // address, and deactivated account must be indistinguishable from outside.
-      if (!user || !user.passwordHash || !user.isActive || !ok) return null;
+      if (!user || !user.passwordHash || !user.isActive || !user.organizationIsActive || !ok) {
+        return null;
+      }
 
       await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
 

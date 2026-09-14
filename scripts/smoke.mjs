@@ -20,6 +20,8 @@ const CHROME = process.env.CHROME_PATH ?? '/usr/bin/google-chrome';
 /** Seeded by `npm run db:seed`. */
 const LOGIN_EMAIL = process.env.SMOKE_EMAIL ?? 'taro.yamada@example.com';
 const LOGIN_PASSWORD = process.env.SMOKE_PASSWORD ?? 'password1234';
+const ADMIN_EMAIL = process.env.SMOKE_ADMIN_EMAIL ?? 'admin@rakuraku-daicho.jp';
+const ADMIN_PASSWORD = process.env.SMOKE_ADMIN_PASSWORD ?? 'admin1234';
 
 const results = [];
 const check = (name, passed, detail = '') => results.push({ name, passed, detail });
@@ -253,6 +255,61 @@ try {
     'お問い合わせを送信できる',
     (await page.locator('text=お問い合わせを受け付けました').count()) > 0,
   );
+
+  // ---------- 運営管理コンソール ----------
+  // 顧客のオーナーには見えないこと。管理画面の存在も知らせない（404）。
+  for (const route of ['/admin', '/admin/users', '/admin/organizations', '/admin/inquiries']) {
+    const res = await page.goto(`${BASE}${route}`, { waitUntil: 'load' });
+    const leaked = /運営管理|契約会社|全 \d+ 社/.test(await page.locator('body').innerText());
+    check(`顧客は ${route} を開けない`, res.status() === 404 && !leaked, `HTTP ${res.status()}`);
+  }
+
+  // 運営管理者は別のブラウザ文脈でログインする（顧客のセッションを壊さないため）。
+  const adminCtx = await browser.newContext({ viewport: { width: 1440, height: 1100 }, locale: 'ja-JP' });
+  const adminPage = await adminCtx.newPage();
+  adminPage.on('pageerror', (e) => jsErrors.push(e.message));
+  adminPage.on('dialog', (d) => d.accept());
+
+  await adminPage.goto(`${BASE}/login`, { waitUntil: 'load' });
+  await adminPage.waitForTimeout(800);
+  await adminPage.fill('#email', ADMIN_EMAIL);
+  await adminPage.fill('#password', ADMIN_PASSWORD);
+  await adminPage.click('button[type=submit]');
+  await adminPage.waitForURL(/\/dashboard/, { timeout: 30000 }).catch(() => {});
+
+  const adminRes = await adminPage.goto(`${BASE}/admin`, { waitUntil: 'load' });
+  await adminPage.waitForTimeout(800);
+  check('運営管理者は管理画面に入れる', adminRes.status() === 200, `HTTP ${adminRes.status()}`);
+
+  await adminPage.goto(`${BASE}/admin/organizations`, { waitUntil: 'load' });
+  await adminPage.waitForTimeout(800);
+  const orgRows = await adminPage.locator('tbody tr').count();
+  check('全社の一覧が出る', orgRows > 0, `${orgRows} 社`);
+
+  // 件数が 0 のまま出ていないこと（相関副問い合わせで全件 0 になった不具合の再発防止）。
+  const seeded = adminPage.locator('tbody tr').filter({ hasText: '大和建設工業株式会社' }).first();
+  const seededText = (await seeded.innerText()).replace(/\s+/g, ' ');
+  check(
+    '会社ごとの件数が実数で出る',
+    // シードの会社は 1現場 / 12枚。全件 0 になる不具合の再発防止。
+    seededText.includes('1 / 12') && !seededText.includes('0 / 0'),
+    seededText.slice(0, 60),
+  );
+
+  await adminPage.goto(`${BASE}/admin/users`, { waitUntil: 'load' });
+  await adminPage.waitForTimeout(800);
+  const userRows = await adminPage.locator('tbody tr').count();
+  check('全社のユーザーが出る', userRows > 0, `${userRows} 名`);
+  check(
+    '運営管理者は停止対象にできない',
+    (await adminPage.locator('text=運営管理者は変更不可').count()) > 0,
+  );
+
+  await adminPage.goto(`${BASE}/admin/inquiries`, { waitUntil: 'load' });
+  await adminPage.waitForTimeout(800);
+  check('お問い合わせが読める', (await adminPage.locator('ul > li').count()) > 0);
+
+  await adminCtx.close();
 
   // ---------- サービス紹介ページ ----------
   await page.goto(`${BASE}/`, { waitUntil: 'load' });

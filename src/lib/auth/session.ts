@@ -41,6 +41,7 @@ export const getSessionContext = cache(async (): Promise<SessionContext | null> 
       userEmail: users.email,
       userImage: users.image,
       isActive: users.isActive,
+      orgIsActive: organizations.isActive,
       orgId: organizations.id,
       orgName: organizations.name,
       storageUsedBytes: organizations.storageUsedBytes,
@@ -55,7 +56,12 @@ export const getSessionContext = cache(async (): Promise<SessionContext | null> 
     .where(eq(users.id, session.user.id))
     .limit(1);
 
-  if (!row || !row.isActive) return null;
+  /*
+   * 会社が停止された時点で、すでにログイン中の人も使えなくなるようにする。
+   * ログイン時だけの確認にすると、停止しても手元のセッションが切れるまで
+   * 触り続けられてしまう。
+   */
+  if (!row || !row.isActive || !row.orgIsActive) return null;
 
   return {
     user: {

@@ -34,6 +34,12 @@ export const users = pgTable(
     twoFactorEnabledAt: timestamp('two_factor_enabled_at', { withTimezone: true }),
 
     isActive: boolean('is_active').notNull().default(true),
+    /**
+     * サービス運営側の管理者。テナントの境界を越えて全社の情報を見られるため、
+     * 画面からは絶対に立てられないようにしてあります（DB で直接付与する運用）。
+     * 顧客企業の「管理者」ロールとは別物です。
+     */
+    isPlatformAdmin: boolean('is_platform_admin').notNull().default(false),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

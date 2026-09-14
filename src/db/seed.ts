@@ -22,6 +22,17 @@ const ORG_NAME = '大和建設工業株式会社';
 const OWNER_EMAIL = 'taro.yamada@example.com';
 const PASSWORD = 'password1234';
 
+/**
+ * サービス運営側の管理者。
+ *
+ * 顧客企業に属さないよう、専用の組織を1つ用意してそこに置きます。
+ * テナントの境界を越えて全社を見られる唯一のアカウントなので、
+ * 本番では必ずパスワードを変更してください。
+ */
+const ADMIN_ORG_NAME = 'らくらく写真台帳 運営';
+const ADMIN_EMAIL = 'admin@rakuraku-daicho.jp';
+const ADMIN_PASSWORD = 'admin1234';
+
 const MEMBERS = [
   { name: '佐藤 花子', email: 'hanako.sato@example.com', role: 'editor' as const },
   { name: '鈴木 一郎', email: 'ichiro.suzuki@example.com', role: 'viewer' as const },
@@ -253,8 +264,57 @@ async function main() {
   await db.update(albums).set({ photoCount: rows.length }).where(eq(albums.id, album!.id));
 
   console.log(`  1 project, 1 album, ${rows.length} photos (画像ファイルも生成しました)`);
-  console.log(`\nlogin: ${OWNER_EMAIL} / ${PASSWORD}`);
+
+  await seedPlatformAdmin();
+
+  console.log(`\nlogin (顧客): ${OWNER_EMAIL} / ${PASSWORD}`);
+  console.log(`login (運営): ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}  → /admin`);
   process.exit(0);
+}
+
+/** 運営管理者と、その所属組織を作り直す。 */
+async function seedPlatformAdmin() {
+  const [existing] = await db
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(eq(organizations.name, ADMIN_ORG_NAME))
+    .limit(1);
+
+  if (existing) {
+    // roles への参照が restrict のため、先に現場メンバーを外す必要がある。
+    const orgProjects = await db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.organizationId, existing.id));
+    for (const p of orgProjects) {
+      await db.delete(projectMembers).where(eq(projectMembers.projectId, p.id));
+    }
+    await db.delete(organizations).where(eq(organizations.id, existing.id));
+  }
+
+  const [adminOrg] = await db
+    .insert(organizations)
+    .values({
+      name: ADMIN_ORG_NAME,
+      slug: slugify('rakuraku-operations'),
+      plan: 'enterprise',
+      storageUsedBytes: 0,
+    })
+    .returning({ id: organizations.id });
+
+  const adminRoleIds = await ensureSystemRoles(adminOrg!.id);
+
+  await db.insert(users).values({
+    name: '運営管理者',
+    email: ADMIN_EMAIL,
+    passwordHash: await bcrypt.hash(ADMIN_PASSWORD, 12),
+    organizationId: adminOrg!.id,
+    defaultRoleId: adminRoleIds.owner,
+    emailVerified: new Date(),
+    isPlatformAdmin: true,
+  });
+
+  console.log('  platform admin');
 }
 
 main().catch((e) => {
