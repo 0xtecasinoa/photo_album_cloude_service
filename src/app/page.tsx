@@ -430,7 +430,7 @@ export default function LandingPage() {
                 width={44}
                 height={98}
                 aria-hidden
-                className="mx-auto h-[46px] w-auto rotate-90 lg:h-[68px] lg:rotate-0"
+                className="mx-auto h-[62px] w-auto rotate-90 lg:h-[96px] lg:rotate-0"
               />
 
               <div>
@@ -466,7 +466,11 @@ export default function LandingPage() {
           <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
             <SectionTag>シンプルなワークフロー</SectionTag>
             <h2 className="jp-phrase text-center text-[24px] leading-[1.5] font-bold text-ink sm:text-[30px]">
-              現場撮影から報告書作成まで、<Mark>すべてをひとつに</Mark>。
+              現場撮影から報告書作成まで、
+              <Mark>
+                <span className="text-brand-link">すべてをひとつに</span>
+              </Mark>
+              。
             </h2>
             <p className="text-ink-muted mt-6 text-center text-[13px]">
               現場で撮影した写真をAIが整理し、写真台帳の作成から帳票出力まで効率化します。
@@ -487,7 +491,7 @@ export default function LandingPage() {
                   )}
                 >
                   <h3 className="flex items-center gap-3">
-                    <span className="bg-brand-ring/20 text-brand grid size-[38px] shrink-0 place-items-center rounded-full text-[13px] font-bold">
+                    <span className="bg-brand-ring grid size-[38px] shrink-0 place-items-center rounded-full text-[13px] font-bold text-white">
                       {step.n}
                     </span>
                     <span className="text-brand-link text-[18px] font-bold">{step.title}</span>
@@ -511,7 +515,7 @@ export default function LandingPage() {
                       width={44}
                       height={98}
                       aria-hidden
-                      className="absolute top-1/2 -right-9 hidden h-[40px] w-auto -translate-y-1/2 lg:block"
+                      className="absolute top-1/2 -right-11 hidden h-[62px] w-auto -translate-y-1/2 lg:block"
                     />
                   )}
                 </li>
