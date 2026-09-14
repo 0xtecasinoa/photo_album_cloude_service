@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
+import { BrandLogo } from '@/components/brand-logo';
 import { usePathname } from 'next/navigation';
 import { Home, MonitorDot, UserRound, BookOpen, Settings } from 'lucide-react';
 import { cn, formatBytes } from '@/lib/utils';
@@ -30,14 +30,7 @@ export function Sidebar({ storageUsedBytes, storageQuotaBytes }: SidebarProps) {
     <aside className="bg-brand flex w-[304px] shrink-0 flex-col text-white">
       <div className="px-4 pt-10 pb-2">
         <Link href="/dashboard" className="inline-block">
-          <Image
-            src="/brand/logo.png"
-            alt="らくらく写真台帳"
-            width={180}
-            height={143}
-            priority
-            className="h-[76px] w-[100px] object-contain"
-          />
+          <BrandLogo priority />
         </Link>
       </div>
 

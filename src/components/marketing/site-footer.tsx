@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { Camera, MonitorDot, Cloud, ShieldCheck } from "lucide-react";
 
 const COLUMNS = [
@@ -69,13 +69,7 @@ export function SiteFooter() {
         <div className="mx-auto max-w-[1240px] px-6 pt-6 pb-16 lg:px-10">
           <div className="grid gap-12 lg:grid-cols-[1.3fr_1fr_1fr_1.1fr]">
             <div>
-              <Image
-                src="/brand/logo.png"
-                alt="らくらく写真台帳"
-                width={180}
-                height={143}
-                className="size-[64px] rounded-[12px] object-contain"
-              />
+              <BrandLogo />
               <p className="mt-5 text-[13px] leading-[1.9] text-white/90">
                 工事写真の撮影から台帳作成・共有まで、
                 <br />

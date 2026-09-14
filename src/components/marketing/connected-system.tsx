@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { Camera, Cloud, MonitorDot, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BrandLogo } from '@/components/brand-logo';
 
 /**
  * 「現場から提出まで、一気通貫でサポート。」
@@ -147,14 +148,7 @@ export function ConnectedSystem() {
 
           <div className="text-center">
             <h3 className="text-brand text-[19px] font-bold">工事写真台帳サービス</h3>
-            <Image
-              src="/brand/logo.png"
-              alt=""
-              width={180}
-              height={143}
-              aria-hidden
-              className="mx-auto mt-4 h-[78px] w-auto"
-            />
+            <BrandLogo decorative className="mx-auto mt-4" />
             <p className="text-ink-muted mt-4 text-[14px] leading-[1.95]">
               すべてのデータがつながり、
               <br className="hidden lg:block" />

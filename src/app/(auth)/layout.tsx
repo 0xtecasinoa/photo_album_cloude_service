@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { BrandLogo } from '@/components/brand-logo';
 
 /**
  * Split auth layout: hero photograph on the left with the product mark overlaid,
@@ -21,26 +22,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {/* Soft fade into the form column, as in the design. */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/85" />
         <Link href="/" className="absolute top-10 left-9 block">
-          <Image
-            src="/brand/logo.png"
-            alt="らくらく写真台帳"
-            width={180}
-            height={143}
-            className="size-[112px] rounded-[20px] object-contain drop-shadow-lg"
-          />
+          <BrandLogo priority />
         </Link>
       </div>
 
       <div className="flex min-w-0 flex-1 items-center justify-center bg-white px-6 py-14">
         <div className="w-full max-w-[461px]">
           <Link href="/" className="mb-10 inline-block lg:hidden">
-            <Image
-              src="/brand/logo.png"
-              alt="らくらく写真台帳"
-              width={180}
-              height={143}
-              className="size-[70px] rounded-[14px] object-contain"
-            />
+            <BrandLogo priority />
           </Link>
           {children}
         </div>
