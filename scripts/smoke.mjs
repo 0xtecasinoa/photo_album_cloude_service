@@ -92,9 +92,25 @@ try {
   await page.waitForTimeout(300);
   check('字下げを変更できる', (await page.locator('label[for=cell-indent]').innerText()).includes('3.0'));
 
-  // ---------- 工事写真台帳 ----------
+  // ---------- 現場一覧 ----------
   await page.goto(`${BASE}/projects`, { waitUntil: 'load' });
   await page.waitForTimeout(2000);
+
+  const projectLinks = await page
+    .locator('a[href^="/projects/"]')
+    .evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute('href')))]);
+  const projectId = projectLinks.map((h) => h.split('/')[2]).find(Boolean);
+  check('現場一覧に現場が並ぶ', Boolean(projectId), `${projectLinks.length} 件`);
+  if (!projectId) throw new Error('現場が1件もありません。npm run db:seed を実行してください。');
+
+  // ---------- 写真一覧 ----------
+  await page.goto(`${BASE}/projects/${projectId}`, { waitUntil: 'load' });
+  await page.waitForTimeout(2000);
+
+  const thumbs = await page
+    .locator('img')
+    .evaluateAll((els) => els.filter((e) => e.src.includes('/api/files/')).length);
+  check('写真のサムネイルが表示される', thumbs > 0, `${thumbs} 枚`);
 
   await page.locator('label').filter({ hasText: 'すべて選択' }).click();
   await page.waitForTimeout(400);
@@ -108,14 +124,32 @@ try {
     (await page.getByRole('button', { name: 'リスト表示' }).getAttribute('aria-pressed')) === 'true',
   );
 
-  const group = page.getByRole('button', { name: /工種・分類/ });
+  const group = page.getByRole('button', { name: /^工種/ }).first();
   const groupBefore = await group.getAttribute('aria-expanded');
   await group.click();
   await page.waitForTimeout(300);
   check('絞り込みを開閉できる', groupBefore !== (await group.getAttribute('aria-expanded')));
 
+  // ---------- 共有リンク ----------
+  await page.getByRole('button', { name: /^共有/ }).click();
+  await page.waitForTimeout(600);
+  check('共有ダイアログが開く', (await page.getByRole('dialog').count()) > 0);
+
+  // ダウンロードを許可するリンクはパスワードなしで発行させない。
+  await page.check('input[name=allowDownload]');
+  await page.getByRole('button', { name: '共有リンクを発行' }).click();
+  await page.waitForTimeout(1500);
+  const shareAlert = await page.getByRole('alert').first().innerText().catch(() => '');
+  check(
+    'DL許可の共有にはパスワードが要る',
+    shareAlert.includes('パスワード'),
+    shareAlert.trim().slice(0, 40),
+  );
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
   // ---------- 写真台帳 ----------
-  await page.goto(`${BASE}/projects/ledger`, { waitUntil: 'load' });
+  await page.goto(`${BASE}/projects/${projectId}/ledger`, { waitUntil: 'load' });
   await page.waitForTimeout(2000);
   const six = page.getByRole('radio', { name: '6枚' });
   await six.click();
@@ -123,7 +157,7 @@ try {
   check('1ページ配置枚数を切り替えられる', (await six.getAttribute('aria-checked')) === 'true');
 
   // ---------- 電子納品 ----------
-  await page.goto(`${BASE}/projects/export`, { waitUntil: 'load' });
+  await page.goto(`${BASE}/projects/${projectId}/export`, { waitUntil: 'load' });
   await page.waitForTimeout(1500);
   const downloadBtn = page.getByRole('button', { name: /台帳を出力ダウンロード/ });
 
@@ -136,10 +170,34 @@ try {
   check('電子納品では不適合写真の警告が出る', (await page.getByRole('alert').count()) > 0);
   check('電子納品では不適合写真があると出力できない', await downloadBtn.isDisabled());
 
+  // 案内するだけでなく、実際に除外して出せること。
+  const excludeBtn = page.getByRole('button', { name: /除外して出力/ });
+  check('不適合写真を除外して出力できる', (await excludeBtn.count()) > 0 && !(await excludeBtn.isDisabled()));
+
   // 社内用モードに切り替えれば出力できる。
   await page.getByRole('button', { name: /モード切替/ }).click();
   await page.waitForTimeout(400);
   check('社内用モードに切り替えれば出力できる', !(await downloadBtn.isDisabled()));
+
+  // ---------- メンバー・権限 ----------
+  await page.goto(`${BASE}/members`, { waitUntil: 'load' });
+  await page.waitForTimeout(1500);
+  const memberRows = await page.locator('tbody tr').count();
+  check('メンバー一覧が実データで出る', memberRows > 0, `${memberRows} 名`);
+
+  const search = page.getByRole('searchbox', { name: 'メンバーを検索' });
+  await search.fill('佐藤');
+  await page.waitForTimeout(400);
+  check('メンバーを検索できる', (await page.locator('tbody tr').count()) < memberRows);
+  await search.fill('');
+  await page.waitForTimeout(300);
+
+  // 自分自身は停止できない（組織から誰も入れなくなる状態を作らないため）。
+  const selfRow = page.locator('tbody tr').filter({ hasText: '自分' }).first();
+  check(
+    '自分自身は停止できない',
+    await selfRow.locator('button[aria-label="自分自身は停止できません"]').isDisabled(),
+  );
 
   // ---------- サービス紹介ページ ----------
   await page.goto(`${BASE}/`, { waitUntil: 'load' });
