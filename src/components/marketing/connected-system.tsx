@@ -89,8 +89,8 @@ function ProductHeading({ product }: { product: Product }) {
 function FlowCaption({ title, body, className }: { title: string; body: string; className?: string }) {
   return (
     <div className={className}>
-      <p className="text-brand-link text-[13px] font-bold">{title}</p>
-      <p className="text-ink-muted mt-1 text-[11px] leading-[1.7]">{body}</p>
+      <p className="text-brand-link text-[15px] font-bold">{title}</p>
+      <p className="text-ink-muted mt-1.5 text-[12.5px] leading-[1.8]">{body}</p>
     </div>
   );
 }
@@ -135,7 +135,7 @@ export function ConnectedSystem() {
                 sizes="(max-width: 1024px) 90vw, 300px"
                 className="aspect-[278/169] w-full rounded-[10px] object-cover"
               />
-              <span className="bg-brand-soft absolute right-3 -bottom-3 grid size-[34px] place-items-center rounded-full text-[12px] font-bold text-white">
+              <span className="bg-brand-soft absolute right-3 -bottom-4 grid size-[46px] place-items-center rounded-full text-[17px] font-bold text-white">
                 {PRODUCTS[0]!.n}
               </span>
             </div>
@@ -146,16 +146,16 @@ export function ConnectedSystem() {
           </article>
 
           <div className="text-center">
-            <h3 className="text-brand text-[15px] font-bold">工事写真台帳サービス</h3>
+            <h3 className="text-brand text-[19px] font-bold">工事写真台帳サービス</h3>
             <Image
               src="/brand/logo.png"
               alt=""
               width={180}
               height={143}
               aria-hidden
-              className="mx-auto mt-3 h-[42px] w-auto"
+              className="mx-auto mt-4 h-[72px] w-auto"
             />
-            <p className="text-ink-muted mt-3 text-[12px] leading-[1.9]">
+            <p className="text-ink-muted mt-4 text-[14px] leading-[1.95]">
               すべてのデータがつながり、
               <br className="hidden lg:block" />
               業務をもっとスマートに。
@@ -172,7 +172,7 @@ export function ConnectedSystem() {
                 sizes="(max-width: 1024px) 90vw, 300px"
                 className="aspect-[278/169] w-full rounded-[10px] object-cover"
               />
-              <span className="bg-brand-soft absolute right-3 -bottom-3 grid size-[34px] place-items-center rounded-full text-[12px] font-bold text-white">
+              <span className="bg-brand-soft absolute right-3 -bottom-4 grid size-[46px] place-items-center rounded-full text-[17px] font-bold text-white">
                 {PRODUCTS[1]!.n}
               </span>
             </div>
@@ -196,7 +196,7 @@ export function ConnectedSystem() {
                   sizes="180px"
                   className="aspect-[198/249] w-[128px] rounded-[10px] object-cover sm:w-[150px]"
                 />
-                <span className="bg-brand-soft absolute -top-1 -right-3 grid size-[34px] place-items-center rounded-full text-[12px] font-bold text-white">
+                <span className="bg-brand-soft absolute -top-2 -right-4 grid size-[46px] place-items-center rounded-full text-[17px] font-bold text-white">
                   {PRODUCTS[2]!.n}
                 </span>
               </div>
@@ -223,7 +223,7 @@ export function ConnectedSystem() {
               width={103}
               height={104}
               aria-hidden
-              className={cn('pointer-events-none absolute hidden h-[54px] w-auto lg:block', pos)}
+              className={cn('pointer-events-none absolute hidden h-[76px] w-auto lg:block', pos)}
             />
           ))}
         </div>
@@ -236,8 +236,8 @@ export function ConnectedSystem() {
         <ul className="mt-12 grid gap-x-6 gap-y-7 sm:grid-cols-2 lg:hidden">
           {FLOW.map(({ title, body }) => (
             <li key={title}>
-              <p className="text-brand-link text-[13px] font-bold">{title}</p>
-              <p className="text-ink-muted mt-1 text-[11px] leading-[1.7]">{body}</p>
+              <p className="text-brand-link text-[15px] font-bold">{title}</p>
+              <p className="text-ink-muted mt-1.5 text-[12.5px] leading-[1.8]">{body}</p>
             </li>
           ))}
         </ul>
