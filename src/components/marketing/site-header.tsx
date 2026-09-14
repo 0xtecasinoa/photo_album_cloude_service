@@ -26,7 +26,7 @@ export function SiteHeader() {
             alt="らくらく写真台帳"
             width={180}
             height={143}
-            className="size-[68px] rounded-[13px] object-contain"
+            className="size-[86px] rounded-[16px] object-contain"
           />
         </Link>
 

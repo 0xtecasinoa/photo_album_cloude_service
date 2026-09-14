@@ -24,9 +24,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <Image
             src="/brand/logo.png"
             alt="らくらく写真台帳"
-            width={122}
-            height={122}
-            className="size-[122px] rounded-[22px] object-contain drop-shadow-lg"
+            width={180}
+            height={143}
+            className="size-[148px] rounded-[26px] object-contain drop-shadow-lg"
           />
         </Link>
       </div>
@@ -37,9 +37,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <Image
               src="/brand/logo.png"
               alt="らくらく写真台帳"
-              width={72}
-              height={72}
-              className="size-[72px] rounded-[14px] object-contain"
+              width={180}
+              height={143}
+              className="size-[92px] rounded-[18px] object-contain"
             />
           </Link>
           {children}

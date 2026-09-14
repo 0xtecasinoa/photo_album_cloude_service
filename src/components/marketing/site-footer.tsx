@@ -37,19 +37,33 @@ export function SiteFooter() {
   return (
     <footer className="text-white">
       {/*
-        Wave transition into the footer. Only the curve is in the image — its lower
-        edge is exactly #1E3A8B, the same as bg-brand below, so the seam is invisible
-        and the footer can grow to any height without stretching the artwork.
+        Wave transition into the footer, inlined from Group 209.svg.
+        Inline rather than a file: it is 669 bytes, so it costs less than the HTTP
+        request would, stays sharp at any width, and its front wave uses the same
+        #1E3A8B as bg-brand below — making the seam invisible.
+        The viewBox is cropped to the crest; the source art continues as ~700px of
+        flat navy that bg-brand already provides.
         -mb-px closes the hairline that subpixel rounding otherwise leaves.
       */}
-      <Image
-        src="/brand/footer-wave.webp"
-        alt=""
-        width={1440}
-        height={130}
+      <svg
+        viewBox="0 0 1440 130"
+        className="-mb-px block h-auto w-full"
         aria-hidden
-        className="-mb-px block h-auto w-full select-none"
-      />
+        focusable="false"
+      >
+        <path
+          d="M1448.1 787.335L-8.79078 789.618L-2.49989 97.5531C315.992 64.7996 484.817 -26.5018 816.395 9.46438C1076.63 42.1782 1206.23 114.931 1439.5 91.5529L1448.1 787.335Z"
+          fill="#A2C0E3"
+        />
+        <path
+          d="M1448.1 815.335L-8.79078 817.618L-8.7908 99.0531C309.701 66.2996 484.817 1.49767 816.395 37.4639C1076.63 70.1777 1210.73 115.931 1444 92.5531L1448.1 815.335Z"
+          fill="#60A5FA"
+        />
+        <path
+          d="M1448.1 848.77L-8.79089 851.053L-8.79094 100.571C309.701 67.8178 484.817 34.9331 816.395 70.8993C1076.63 103.613 1214.84 117.035 1448.1 93.6568L1448.1 848.77Z"
+          fill="#1E3A8B"
+        />
+      </svg>
 
       <div className="bg-brand">
         <div className="mx-auto max-w-[1240px] px-6 pt-6 pb-16 lg:px-10">
@@ -60,7 +74,7 @@ export function SiteFooter() {
                 alt="らくらく写真台帳"
                 width={180}
                 height={143}
-                className="size-[72px] rounded-[14px] object-contain"
+                className="size-[92px] rounded-[18px] object-contain"
               />
               <p className="mt-5 text-[13px] leading-[1.9] text-white/90">
                 工事写真の撮影から台帳作成・共有まで、

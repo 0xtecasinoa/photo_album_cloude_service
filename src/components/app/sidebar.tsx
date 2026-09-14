@@ -36,7 +36,7 @@ export function Sidebar({ storageUsedBytes, storageQuotaBytes }: SidebarProps) {
             width={180}
             height={143}
             priority
-            className="h-[86px] w-[112px] object-contain"
+            className="h-[104px] w-[136px] object-contain"
           />
         </Link>
       </div>
