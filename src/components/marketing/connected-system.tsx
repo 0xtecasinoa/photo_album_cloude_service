@@ -79,9 +79,9 @@ function PointList({ points }: { points: string[] }) {
 function ProductHeading({ product }: { product: Product }) {
   const Icon = product.icon;
   return (
-    <h3 className="flex items-center gap-2">
-      <Icon className="text-brand-link size-[18px] shrink-0" strokeWidth={2} aria-hidden />
-      <span className="text-[15px] font-bold text-ink">{product.title}</span>
+    <h3 className="flex items-center gap-2.5">
+      <Icon className="text-brand-link size-[26px] shrink-0" strokeWidth={2} aria-hidden />
+      <span className="text-[19px] font-bold text-ink">{product.title}</span>
     </h3>
   );
 }
