@@ -49,8 +49,8 @@ export function Faq() {
                 aria-expanded={open}
                 className="flex w-full items-center gap-4 px-6 py-5 text-left"
               >
-                <span className="text-brand-link text-[20px] font-bold">Q.</span>
-                <span className="text-brand flex-1 text-[15px] font-bold sm:text-[17px]">
+                <span className="text-brand-link text-[32px] leading-none font-bold sm:text-[40px]">Q.</span>
+                <span className="text-brand flex-1 text-[17px] font-bold sm:text-[19px]">
                   {item.q}
                 </span>
                 <ChevronDown
@@ -61,8 +61,8 @@ export function Faq() {
             </h3>
             {open && (
               <div className="flex gap-4 px-6 pb-6">
-                <span className="text-accent text-[20px] font-bold">A.</span>
-                <p className="flex-1 text-[14px] leading-[2] text-ink">{item.a}</p>
+                <span className="text-accent text-[32px] leading-none font-bold sm:text-[40px]">A.</span>
+                <p className="flex-1 text-[15px] leading-[2] text-ink">{item.a}</p>
               </div>
             )}
           </li>
