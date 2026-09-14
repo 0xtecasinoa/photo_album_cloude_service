@@ -24,9 +24,9 @@ export function SiteHeader() {
           <Image
             src="/brand/logo.png"
             alt="らくらく写真台帳"
-            width={52}
-            height={52}
-            className="size-[52px] rounded-[10px] object-contain"
+            width={180}
+            height={143}
+            className="size-[68px] rounded-[13px] object-contain"
           />
         </Link>
 

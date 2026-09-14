@@ -33,10 +33,10 @@ export function Sidebar({ storageUsedBytes, storageQuotaBytes }: SidebarProps) {
           <Image
             src="/brand/logo.png"
             alt="らくらく写真台帳"
-            width={90}
-            height={69}
+            width={180}
+            height={143}
             priority
-            className="h-[69px] w-[90px] object-contain"
+            className="h-[86px] w-[112px] object-contain"
           />
         </Link>
       </div>

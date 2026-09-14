@@ -153,7 +153,7 @@ export function ConnectedSystem() {
               width={180}
               height={143}
               aria-hidden
-              className="mx-auto mt-4 h-[72px] w-auto"
+              className="mx-auto mt-4 h-[88px] w-auto"
             />
             <p className="text-ink-muted mt-4 text-[14px] leading-[1.95]">
               すべてのデータがつながり、
