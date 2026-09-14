@@ -1,13 +1,55 @@
 'use client';
 
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Calendar } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { demoFilterTree } from '@/lib/demo-data';
+import { formatDateOnly } from '@/lib/utils';
 
-function FilterGroup({ label, items }: { label: string; items: (typeof demoFilterTree)[number]['items'] }) {
+export type Facets = {
+  total: number;
+  earliest: Date | null;
+  latest: Date | null;
+  byWorkType: { value: string | null; count: number }[];
+  byIntegrity: { value: string; count: number }[];
+  bySource: { value: string; count: number }[];
+};
+
+const INTEGRITY_LABELS: Record<string, string> = {
+  valid: '署名OK', invalid: '署名エラー', unsigned: '署名なし',
+  pending: '検証待ち', error: '検証失敗',
+};
+const SOURCE_LABELS: Record<string, string> = {
+  mobile_camera: '自アプリで撮影', web_upload: '取り込み（アップロード）',
+  import: '取り込み', api: '他アプリから連携',
+};
+
+function Group({
+  label,
+  param,
+  options,
+  labels,
+}: {
+  label: string;
+  param: string;
+  options: { value: string | null; count: number }[];
+  labels?: Record<string, string>;
+}) {
   const [open, setOpen] = useState(true);
-  const [expanded, setExpanded] = useState<string | null>('鉄筋工');
+  const router = useRouter();
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const active = search.get(param);
+
+  /** 絞り込みは URL に持たせる。再読み込みや共有で同じ結果に戻れるため。 */
+  const apply = (value: string | null) => {
+    const next = new URLSearchParams(search.toString());
+    if (value === null || value === active) next.delete(param);
+    else next.set(param, value);
+    router.push(`${pathname}?${next.toString()}`);
+  };
+
+  if (options.length === 0) return null;
 
   return (
     <section className="mb-6">
@@ -23,46 +65,28 @@ function FilterGroup({ label, items }: { label: string; items: (typeof demoFilte
 
       {open && (
         <ul className="border-border-subtle mt-2 ml-[7px] space-y-[7px] border-l pl-3">
-          {items.map((item) => {
-            const hasChildren = item.children.length > 0;
-            const isExpanded = expanded === item.label;
+          {options.map((o) => {
+            if (!o.value) return null;
+            const isActive = active === o.value;
             return (
-              <li key={item.label}>
+              <li key={o.value}>
                 <button
                   type="button"
-                  onClick={() => hasChildren && setExpanded(isExpanded ? null : item.label)}
-                  aria-expanded={hasChildren ? isExpanded : undefined}
-                  className="hover:text-brand flex w-full items-center justify-between gap-2 text-[12px] text-ink"
+                  onClick={() => apply(o.value)}
+                  aria-pressed={isActive}
+                  className={cn(
+                    'flex w-full items-center justify-between gap-2 text-[12px]',
+                    isActive ? 'text-brand font-bold' : 'hover:text-brand text-ink',
+                  )}
                 >
-                  <span className="flex items-center gap-1.5">
-                    {hasChildren ? (
-                      isExpanded ? (
-                        <ChevronDown className="size-3 shrink-0" aria-hidden />
-                      ) : (
-                        <ChevronRight className="size-3 shrink-0" aria-hidden />
-                      )
-                    ) : (
-                      <ChevronRight className="size-3 shrink-0 opacity-40" aria-hidden />
-                    )}
-                    {item.label}
+                  <span className="flex items-center gap-1.5 truncate">
+                    <ChevronRight className={cn('size-3 shrink-0', !isActive && 'opacity-40')} aria-hidden />
+                    {labels?.[o.value] ?? o.value}
                   </span>
                   <span className="tabular text-ink-muted text-[11px]">
-                    {item.count.toLocaleString('ja-JP')}
+                    {o.count.toLocaleString('ja-JP')}
                   </span>
                 </button>
-
-                {hasChildren && isExpanded && (
-                  <ul className="border-border-subtle mt-1.5 ml-[6px] space-y-1.5 border-l pl-3">
-                    {item.children.map((child) => (
-                      <li key={child.label} className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] text-ink-muted">{child.label}</span>
-                        <span className="tabular text-ink-faint text-[11px]">
-                          {child.count.toLocaleString('ja-JP')}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </li>
             );
           })}
@@ -72,49 +96,39 @@ function FilterGroup({ label, items }: { label: string; items: (typeof demoFilte
   );
 }
 
-export function FilterRail() {
+export function FilterRail({ facets }: { facets: Facets }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const hasFilters = ['workType', 'integrity', 'source', 'category'].some((k) => search.get(k));
+
   return (
     <div className="w-[199px] shrink-0">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-brand text-[13px] font-bold">絞り込み</h2>
-        <button type="button" className="text-brand-link text-[12px] hover:underline">
-          リセット
-        </button>
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={() => router.push(pathname)}
+            className="text-brand-link text-[12px] hover:underline"
+          >
+            リセット
+          </button>
+        )}
       </div>
 
-      {demoFilterTree.map((group) => (
-        <FilterGroup key={group.label} label={group.label} items={group.items} />
-      ))}
+      <Group label="工種" param="workType" options={facets.byWorkType} />
+      <Group label="署名の状態" param="integrity" options={facets.byIntegrity} labels={INTEGRITY_LABELS} />
+      <Group label="出所（写真の出どころ）" param="source" options={facets.bySource} labels={SOURCE_LABELS} />
 
-      <section className="mb-6">
-        <h3 className="text-brand mb-2 flex items-center gap-2 text-[13px] font-bold">
-          <ChevronDown className="size-3.5" aria-hidden />
-          撮影日
-        </h3>
-        <div className="border-border flex h-[34px] items-center gap-2 rounded-[6px] border px-2.5">
-          <Calendar className="text-ink-muted size-3.5 shrink-0" aria-hidden />
-          <span className="tabular text-[11px] text-ink">2024/04/01 〜 2024/04/30</span>
-        </div>
-      </section>
-
-      <section className="mb-4 flex items-center justify-between">
-        <h3 className="text-brand flex items-center gap-2 text-[13px] font-bold">
-          <ChevronRight className="size-3.5" aria-hidden />
-          タグ
-        </h3>
-        <button
-          type="button"
-          className="text-brand-link hover:bg-brand-tint grid size-5 place-items-center rounded-full"
-          aria-label="タグを追加"
-        >
-          <Plus className="size-4" aria-hidden />
-        </button>
-      </section>
-
-      <button type="button" className="text-brand flex items-center gap-2 text-[13px] font-bold">
-        <ChevronRight className="size-3.5" aria-hidden />
-        詳細フィルター
-      </button>
+      {facets.earliest && facets.latest && (
+        <section>
+          <h3 className="text-brand mb-2 text-[13px] font-bold">撮影日</h3>
+          <p className="tabular text-ink-muted text-[11px]">
+            {formatDateOnly(facets.earliest)} 〜 {formatDateOnly(facets.latest)}
+          </p>
+        </section>
+      )}
     </div>
   );
 }

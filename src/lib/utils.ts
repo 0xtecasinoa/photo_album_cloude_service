@@ -31,3 +31,16 @@ export function formatDateOnly(date: Date): string {
     year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(date);
 }
+
+/**
+ * 集計関数（max/min など）の戻り値を Date に揃える。
+ *
+ * ドライバは通常の timestamp 列を Date にしてくれますが、集計関数の
+ * 戻り値は文字列のまま返ることがあります。型注釈だけ Date にしておくと、
+ * 画面側の日付整形が実行時に落ちます。
+ */
+export function toDate(value: string | Date | null | undefined): Date | null {
+  if (!value) return null;
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
