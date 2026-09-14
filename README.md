@@ -90,7 +90,7 @@ AI が黒板や手書き看板の文字を読み取り、工事写真台帳の�
 | 認証 | Auth.js v5（NextAuth） |
 | データベース | PostgreSQL 17 |
 | ORM | Drizzle ORM |
-| ストレージ | S3 互換（開発時 MinIO、本番は S3 / Cloudflare R2 など） |
+| ストレージ | ローカルディスク（開発）／ S3 互換（本番） |
 | 画像処理 | sharp / exifr |
 | 帳票 | ExcelJS / pdf-lib |
 | バリデーション | Zod |
@@ -101,7 +101,10 @@ AI が黒板や手書き看板の文字を読み取り、工事写真台帳の�
 ## 動作環境
 
 - Node.js 24 以上
-- Docker / Docker Compose（開発用の PostgreSQL・MinIO を起動するため）
+- PostgreSQL
+
+Docker は使いません。開発時は `npm run dev:db` で PostgreSQL を起動でき、
+ファイルもローカルディスクに保存するため、追加のサービスは不要です。
 
 ---
 
@@ -127,26 +130,21 @@ openssl rand -base64 32
 
 ### 3. データベースの起動
 
-Docker が使える場合は PostgreSQL と MinIO（S3 互換ストレージ）を起動します。
-
 ```bash
-docker compose up -d
+npm run dev:db
 ```
 
-MinIO の管理画面は <http://localhost:9001>（`minioadmin` / `minioadmin`）です。
+PGlite（WebAssembly 版の PostgreSQL）を PostgreSQL のワイヤプロトコルで公開します。
+アプリからは通常の PostgreSQL と区別がつかないため、`DATABASE_URL` も接続コードも
+本番と同じまま使えます。データは `.pgdata/` に入ります。
 
-> **Docker が使えない場合**
-> `npm run dev:db` で、Docker なしに PostgreSQL を起動できます。
-> PGlite（WebAssembly 版 PostgreSQL）を PostgreSQL のワイヤプロトコルで
-> 公開するため、`DATABASE_URL` もアプリ側のコードも本番と同じまま使えます。
->
-> ```bash
-> npm run dev:db        # 127.0.0.1:5432 で待ち受け、データは .pgdata/
-> ```
->
-> ただし **同時接続は1本まで**です。開発サーバーを起動したまま psql などから
-> 接続するとリセットされます。並行処理が必要な場合は通常の PostgreSQL を使い、
-> `DB_POOL_MAX` で接続数を指定してください。
+すでに PostgreSQL を用意している場合は、`DATABASE_URL` をそちらに向けるだけです。
+この手順は不要です。
+
+> **同時接続は1本まで**
+> `dev:db` は一度に1つの接続しか受け付けません。開発サーバーを起動したまま
+> psql などから接続すると切断されます。そのため開発時の接続プールは 1 にしています
+> （`DB_POOL_MAX` で変更可）。並行処理が必要なら通常の PostgreSQL を使ってください。
 
 ### 4. マイグレーションと初期データ
 
@@ -191,12 +189,13 @@ curl -b "authjs.session-token=$TOKEN" \
 | `DATABASE_URL` | ○ | PostgreSQL の接続 URL |
 | `AUTH_SECRET` | ○ | セッション署名用の秘密鍵（32 文字以上） |
 | `AUTH_URL` | | アプリケーションの URL |
-| `S3_ENDPOINT` | ○ | オブジェクトストレージのエンドポイント |
-| `S3_REGION` | ○ | リージョン（既定：`ap-northeast-1`） |
-| `S3_BUCKET` | ○ | バケット名 |
-| `S3_ACCESS_KEY_ID` | ○ | アクセスキー |
-| `S3_SECRET_ACCESS_KEY` | ○ | シークレットキー |
-| `S3_FORCE_PATH_STYLE` | | MinIO 利用時は `true`。本番の S3 では不要 |
+| `STORAGE_DIR` | | ファイルの保存先（既定：`./.storage`） |
+| `S3_ENDPOINT` | | S3 互換ストレージのエンドポイント |
+| `S3_REGION` | | リージョン（既定：`ap-northeast-1`） |
+| `S3_BUCKET` | | バケット名 |
+| `S3_ACCESS_KEY_ID` | | アクセスキー |
+| `S3_SECRET_ACCESS_KEY` | | シークレットキー |
+| `S3_FORCE_PATH_STYLE` | | パス形式のアドレスが必要な場合のみ `true` |
 | `MAX_UPLOAD_BYTES` | | 1 ファイルあたりの上限（既定：50MB） |
 | `GOOGLE_CLIENT_ID` | | Google ログインを使う場合のみ |
 | `GOOGLE_CLIENT_SECRET` | | Google ログインを使う場合のみ |
@@ -223,6 +222,25 @@ GOOGLE_CLIENT_SECRET="..."
 
 初回サインイン時には、組織と7つの既定ロールが自動で作成され、
 そのユーザーはオーナーになります。
+
+---
+
+## ファイルの保存先
+
+既定ではローカルディスク（`STORAGE_DIR`、既定 `./.storage`）に保存します。
+開発時に追加のサービスを立てずに済ませるためです。
+
+`S3_BUCKET` / `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` をすべて設定すると、
+保存先が自動的に S3（および S3 互換ストレージ）に切り替わります。
+呼び出し側のコードは変わりません。
+
+| | ローカル | S3 |
+| --- | --- | --- |
+| 閲覧 URL | `/api/files/...`（都度セッションと所属組織を確認） | 期限付き URL |
+| 直接アップロード | 不可（API 経由で受け取る） | 期限付き URL を発行 |
+| 複数サーバーでの共有 | 不可 | 可 |
+
+本番では S3 を使ってください。ローカル保存はサーバーを複数台にすると共有できません。
 
 ---
 
@@ -379,7 +397,7 @@ await requireProjectCapability(userId, projectId, 'photo.delete');
 - EXIF 解析（撮影日時・GPS・向き）とテスト
 - 画像処理（ハッシュ・サムネイル・表示用画像・有効画素数判定）とテスト
 - 電子小黒板テンプレートエディタ（動作確認済み）
-- S3 互換ストレージ層
+- ファイル保存層（ローカルディスク／S3 を同じ呼び出しで切り替え）
 - **Excel 出力**（既定書式＋発注者雛形への差し込み）
 - **PDF 出力**（1/3/4/6 枚組、日本語組版）
 - **電子納品出力**（PHOTO.XML／Shift_JIS、PIC・DRA 構成、適合チェック付き）

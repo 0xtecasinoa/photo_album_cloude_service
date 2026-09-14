@@ -47,3 +47,6 @@ next-env.d.ts
 
 # local dev database (PGlite)
 .pgdata/
+
+# local file storage
+.storage/

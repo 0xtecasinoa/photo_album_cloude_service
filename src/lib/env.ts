@@ -11,13 +11,20 @@ const envSchema = z.object({
   AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters'),
   AUTH_URL: z.string().url().optional(),
 
-  // S3-compatible object storage (MinIO locally, S3/R2 in production)
-  S3_ENDPOINT: z.string().url(),
+  /**
+   * Object storage.
+   *
+   * Leave the S3 settings empty and files are written to STORAGE_DIR on local disk —
+   * no extra service to run in development. Set all four S3 values and the same code
+   * writes to S3 (or any S3-compatible store) instead.
+   */
+  STORAGE_DIR: z.string().default('./.storage'),
+  S3_ENDPOINT: z.string().url().optional(),
   S3_REGION: z.string().default('ap-northeast-1'),
-  S3_BUCKET: z.string().min(1),
-  S3_ACCESS_KEY_ID: z.string().min(1),
-  S3_SECRET_ACCESS_KEY: z.string().min(1),
-  /** MinIO needs path-style; real S3 does not. */
+  S3_BUCKET: z.string().optional(),
+  S3_ACCESS_KEY_ID: z.string().optional(),
+  S3_SECRET_ACCESS_KEY: z.string().optional(),
+  /** Some S3-compatible stores need path-style addressing; real S3 does not. */
   S3_FORCE_PATH_STYLE: z
     .string()
     .optional()
