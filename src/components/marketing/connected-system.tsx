@@ -200,7 +200,7 @@ export function ConnectedSystem() {
                   {PRODUCTS[2]!.n}
                 </span>
               </div>
-              <div className="min-w-0 flex-1 pt-1 pr-1">
+              <div className="min-w-0 flex-1 pt-5 pr-1 sm:pt-7">
                 <ProductHeading product={PRODUCTS[2]!} />
                 <PointList points={PRODUCTS[2]!.points} />
               </div>
