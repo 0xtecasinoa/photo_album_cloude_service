@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
-  HardHat, Check, ChevronsRight, ShieldCheck, Share2, Clock,
+  HardHat, Check, ShieldCheck, Share2, Clock,
   Camera, Cloud, Sparkles, FileSpreadsheet, FileOutput, Building, Landmark,
 } from 'lucide-react';
 import { SiteHeader } from '@/components/marketing/site-header';
@@ -353,12 +353,19 @@ export default function LandingPage() {
                   ))}
                 </ul>
 
-                <Link
-                  href="/signup"
-                  className="bg-accent hover:bg-accent-hover mt-10 inline-flex items-center gap-3 rounded-[30px] px-7 py-3.5 text-[13px] font-bold text-white transition-colors"
-                >
-                  権限・共有設定について
-                  <span className="grid size-7 place-items-center rounded-full bg-white/25" aria-hidden>
+                {/*
+                  Two separate gold shapes, as in the design — but one <Link>, so screen
+                  readers and keyboard users get a single target rather than two links
+                  pointing at the same page.
+                */}
+                <Link href="/signup" className="group mt-10 inline-flex items-center gap-3">
+                  <span className="bg-accent group-hover:bg-accent-hover rounded-[30px] px-7 py-3.5 text-[13px] font-bold text-white transition-colors">
+                    権限・共有設定について
+                  </span>
+                  <span
+                    className="bg-accent group-hover:bg-accent-hover grid size-[46px] shrink-0 place-items-center rounded-full text-[15px] text-white transition-colors"
+                    aria-hidden
+                  >
                     ↗
                   </span>
                 </Link>
@@ -393,13 +400,20 @@ export default function LandingPage() {
 
             <div className="mt-14 grid items-center gap-8 lg:grid-cols-[1fr_auto_1fr]">
               <div>
-                <p className="border-border-subtle text-ink-muted mx-auto mb-5 w-fit rounded-[30px] border bg-white px-6 py-2 text-[12px]">
+                <p className="border-brand text-ink-muted mx-auto mb-5 w-fit rounded-[30px] border border-dotted bg-white px-6 py-2 text-[12px]">
                   手書き看板の例
                 </p>
                 <ChalkBoard rows={BOARD_ROWS} handwritten />
               </div>
 
-              <ChevronsRight className="text-brand/40 mx-auto size-10 rotate-90 lg:rotate-0" aria-hidden />
+              <Image
+                src="/brand/ocr-arrow.webp"
+                alt=""
+                width={44}
+                height={98}
+                aria-hidden
+                className="mx-auto h-[46px] w-auto rotate-90 lg:h-[68px] lg:rotate-0"
+              />
 
               <div>
                 <p className="border-border-subtle text-ink-muted mx-auto mb-5 w-fit rounded-[30px] border bg-white px-6 py-2 text-[12px]">
