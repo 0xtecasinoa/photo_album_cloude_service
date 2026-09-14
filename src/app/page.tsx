@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   HardHat, Check, ChevronsRight, ShieldCheck, Share2, Clock,
-  Camera, Cloud, Sparkles, FileSpreadsheet, FileOutput, UserRoundCog, Building, Landmark,
+  Camera, Cloud, Sparkles, FileSpreadsheet, FileOutput, Building, Landmark,
 } from 'lucide-react';
 import { SiteHeader } from '@/components/marketing/site-header';
 import { SiteFooter } from '@/components/marketing/site-footer';
@@ -70,9 +70,21 @@ const STEPS = [
 ];
 
 const SHARING = [
-  { icon: UserRoundCog, title: '事務所で確認・管理', body: '整理・台帳作成の権限（管理者／台帳担当）' },
-  { icon: Share2, title: '協力会社とも共有', body: '6桁コードで一時参加。権限は撮影のみなど絞られます' },
-  { icon: ShieldCheck, title: '関係者もすぐに確認', body: '写真・データを見るだけの権限で参加' },
+  {
+    icon: '/brand/share-office.webp',
+    title: '事務所で確認・管理',
+    body: '整理・台帳作成の権限（管理者／台帳担当）',
+  },
+  {
+    icon: '/brand/share-partner.webp',
+    title: '協力会社とも共有',
+    body: '6桁コードで一時参加。権限は撮影のみなど絞られます',
+  },
+  {
+    icon: '/brand/share-viewer.webp',
+    title: '関係者もすぐに確認',
+    body: '写真・データを見るだけの権限で参加',
+  },
 ];
 
 const WORKFLOW = [
@@ -272,7 +284,7 @@ export default function LandingPage() {
                         sizes="(max-width: 1024px) 92vw, 360px"
                         className="aspect-[358/284] w-full rounded-[12px] object-cover"
                       />
-                      <span className="bg-brand-soft absolute right-[4%] bottom-[3%] grid size-[46px] place-items-center rounded-full text-[15px] font-bold text-white">
+                      <span className="bg-brand-soft absolute right-[4%] bottom-[0%] grid size-[46px] place-items-center rounded-full text-[15px] font-bold text-white">
                         {step.n}
                       </span>
                     </div>
@@ -305,9 +317,14 @@ export default function LandingPage() {
         <section id="features" className="bg-surface-muted">
           <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
             <h2 className="jp-phrase text-brand text-center text-[26px] leading-[1.6] font-bold sm:text-[32px]">
-              同じプロジェクトのメン
+              {/*
+                The Figma layout breaks after 「メン」 because its text box is a fixed
+                width. Kept at the word boundary instead: the original split 「メンバー」
+                across both the line break AND the navy/gold colour change.
+              */}
+              同じプロジェクトの
               <br className="hidden sm:block" />
-              <span className="text-accent">バーと、すぐに共有</span>
+              <span className="text-accent">メンバーと、すぐに共有</span>
             </h2>
 
             <div className="mt-14 grid items-center gap-12 lg:grid-cols-2">
@@ -317,11 +334,17 @@ export default function LandingPage() {
                 </p>
 
                 <ul className="mt-10 space-y-7">
-                  {SHARING.map(({ icon: Icon, title, body }) => (
-                    <li key={title} className="flex gap-4">
-                      <span className="bg-brand-soft grid size-[50px] shrink-0 place-items-center rounded-full text-white">
-                        <Icon className="size-6" strokeWidth={1.7} aria-hidden />
-                      </span>
+                  {SHARING.map(({ icon, title, body }) => (
+                    <li key={title} className="flex items-center gap-4">
+                      {/* The artwork already contains the blue disc, so no wrapper here. */}
+                      <Image
+                        src={icon}
+                        alt=""
+                        width={105}
+                        height={105}
+                        aria-hidden
+                        className="size-[50px] shrink-0"
+                      />
                       <div>
                         <h3 className="text-[14px] font-bold text-ink">{title}</h3>
                         <p className="text-ink-muted mt-1 text-[12px] leading-[1.9]">{body}</p>
@@ -341,7 +364,20 @@ export default function LandingPage() {
                 </Link>
               </div>
 
-              <div className="from-brand/80 to-brand-soft/60 h-[420px] rounded-[14px] bg-gradient-to-br" />
+              {/* Same photograph as the sign-up screen; deliberately shared rather than duplicated. */}
+              <Image
+                src="/brand/auth-hero.webp"
+                alt="タブレットを持って現場を確認している現場監督"
+                width={1432}
+                height={1966}
+                sizes="(max-width: 1024px) 92vw, 560px"
+                /*
+                  The source is a tall portrait (1432x1966). A wide, short box crops it
+                  so hard that the tablet falls outside the frame; a near-square box
+                  keeps both the helmet and the tablet, as in the design.
+                */
+                className="aspect-[11/10] w-full rounded-[14px] object-cover object-[center_28%]"
+              />
             </div>
           </div>
         </section>
