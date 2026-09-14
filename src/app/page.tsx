@@ -169,11 +169,11 @@ export default function LandingPage() {
             <Image
               src="/brand/hero-product.webp"
               alt="スマートフォンの電子小黒板とパソコンの工事写真台帳が、クラウドで連携している様子"
-              width={696}
-              height={464}
+              width={768}
+              height={512}
               priority
               sizes="(max-width: 1024px) 92vw, 640px"
-              className="h-auto w-full max-w-[696px] justify-self-center lg:justify-self-end"
+              className="h-auto w-full max-w-[768px] justify-self-center lg:justify-self-end"
             />
           </div>
         </section>
