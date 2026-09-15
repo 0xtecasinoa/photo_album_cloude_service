@@ -56,3 +56,6 @@ next-env.d.ts
 
 # 本番の環境変数
 .env.production
+
+# ベンチマークで生成する画像
+bench/boards/

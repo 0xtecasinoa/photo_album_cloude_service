@@ -3,31 +3,43 @@
  *
  *   npm run setup:ocr
  *
- * 16MB あり、ライセンスも別（Apache-2.0）なので、リポジトリには入れず
- * ここで取得します。未取得でも取り込み機能は動きます（項目が空欄になるだけ）。
+ * 合計 27MB ほどあり、ライセンスも別（Apache-2.0）なので、リポジトリには
+ * 入れずここで取得します。未取得でも取り込み機能は動きます
+ * （項目が空欄で作成され、手入力になるだけ）。
  */
 import { mkdir, writeFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 const DIR = path.join(process.cwd(), '.tessdata');
-const FILE = path.join(DIR, 'jpn.traineddata.gz');
-const URL_ = 'https://tessdata.projectnaptha.com/4.0.0/jpn.traineddata.gz';
+const BASE = 'https://tessdata.projectnaptha.com/4.0.0';
 
-const existing = await stat(FILE).catch(() => null);
-if (existing && existing.size > 1_000_000) {
-  console.log(`既に取得済みです: ${FILE} (${(existing.size / 1024 / 1024).toFixed(1)} MB)`);
-  process.exit(0);
-}
-
-console.log(`取得中: ${URL_}`);
-const res = await fetch(URL_);
-if (!res.ok) {
-  console.error(`取得に失敗しました (HTTP ${res.status})`);
-  process.exit(1);
-}
+/*
+ * 日本語だけでは、測点や日付の英数字が丸囲みや仮名に化けます。
+ * 英数字のモデルを併用して読ませるため、2つとも必要です。
+ */
+const LANGS = ['jpn', 'eng'];
 
 await mkdir(DIR, { recursive: true });
-await writeFile(FILE, Buffer.from(await res.arrayBuffer()));
 
-const saved = await stat(FILE);
-console.log(`保存しました: ${FILE} (${(saved.size / 1024 / 1024).toFixed(1)} MB)`);
+for (const lang of LANGS) {
+  const file = path.join(DIR, `${lang}.traineddata.gz`);
+  const existing = await stat(file).catch(() => null);
+  if (existing && existing.size > 1_000_000) {
+    console.log(`${lang}: 取得済み (${(existing.size / 1024 / 1024).toFixed(1)} MB)`);
+    continue;
+  }
+
+  const url = `${BASE}/${lang}.traineddata.gz`;
+  console.log(`${lang}: 取得中 ${url}`);
+  const res = await fetch(url);
+  if (!res.ok) {
+    console.error(`${lang}: 取得に失敗しました (HTTP ${res.status})`);
+    process.exit(1);
+  }
+
+  await writeFile(file, Buffer.from(await res.arrayBuffer()));
+  const saved = await stat(file);
+  console.log(`${lang}: 保存しました (${(saved.size / 1024 / 1024).toFixed(1)} MB)`);
+}
+
+console.log(`\n保存先: ${DIR}`);

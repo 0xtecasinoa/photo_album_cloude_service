@@ -17,7 +17,8 @@
     "smoke": "node scripts/smoke.mjs",
     "dev:db": "node scripts/dev-db.mjs",
     "smoke:auth": "node scripts/smoke-auth.mjs",
-    "setup:ocr": "node scripts/setup-ocr.mjs"
+    "setup:ocr": "node scripts/setup-ocr.mjs",
+    "bench:ocr": "tsx bench/make-boards.mts && tsx bench/ocr-bench.mts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",

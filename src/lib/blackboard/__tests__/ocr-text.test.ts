@@ -5,6 +5,7 @@ import {
   collapseJapaneseSpacing,
   cleanOcrLine,
   extractBoardFields,
+  withinOneEdit,
 } from '../ocr-text';
 
 test('丸囲み数字は半角数字に開かれる', () => {
@@ -108,4 +109,84 @@ test('項目名が連続していたら、次の項目名を値として食べ�
   assert.equal(fields[0]!.value, '', '空欄のまま残す');
   assert.equal(fields[1]!.key, 'workType');
   assert.equal(fields[1]!.value, '路盤工');
+});
+
+test('1文字違いの判定', () => {
+  assert.equal(withinOneEdit('測点', '測点'), true);
+  assert.equal(withinOneEdit('剱点', '測点'), true, '1文字の読み違い');
+  assert.equal(withinOneEdit('測', '測点'), true, '1文字の欠落');
+  assert.equal(withinOneEdit('測点数', '測点'), true, '1文字の混入');
+  assert.equal(withinOneEdit('工種', '測点'), false, '2文字違いは別物');
+  assert.equal(withinOneEdit('', '測点'), false);
+});
+
+test('項目名を1文字読み違えても値を拾える', () => {
+  // 実測で起きた例。値は正しく読めているのに、項目名が「剱点」になって
+  // 対応付けに失敗していた。
+  const fields = extractBoardFields([
+    { text: '剱点', confidence: 78, bbox: { x0: 94, y0: 543, x1: 228, y1: 609 } },
+    { text: 'NO.12+5.0m', confidence: 91, bbox: { x0: 569, y0: 549, x1: 989, y1: 604 } },
+  ]);
+
+  assert.equal(fields.length, 1);
+  assert.equal(fields[0]!.key, 'shootingLocation');
+  assert.equal(fields[0]!.value, 'NO.12+5.0m');
+  assert.ok(fields[0]!.confidence <= 60, '読み違えた項目は確信度を下げて目立たせる');
+});
+
+test('同じ段で右にある行を値として拾う', () => {
+  // 並び順だけで対応付けると、項目名の直後にある認識ミスの断片を
+  // 値として拾ってしまう（実測で「ノハコノいい」を拾っていた）。
+  const fields = extractBoardFields([
+    { text: '測点', confidence: 94, bbox: { x0: 95, y0: 542, x1: 228, y1: 609 } },
+    { text: 'ノハコノいい', confidence: 80, bbox: { x0: 107, y0: 592, x1: 231, y1: 609 } },
+    { text: 'NO.12+5.0m', confidence: 91, bbox: { x0: 573, y0: 549, x1: 972, y1: 604 } },
+  ]);
+
+  const point = fields.find((f) => f.key === 'shootingLocation');
+  assert.equal(point?.value, 'NO.12+5.0m');
+  // 項目名に重なった断片は落とす（別のテストで確認）。
+  // ここで見たいのは、並び順ではなく段で値を選べていること。
+  assert.equal(fields.length, 1);
+});
+
+test('別の段にある行は値として拾わない', () => {
+  const fields = extractBoardFields([
+    { text: '工種', confidence: 95, bbox: { x0: 94, y0: 324, x1: 232, y1: 390 } },
+    { text: '大和建設工業', confidence: 96, bbox: { x0: 569, y0: 762, x1: 995, y1: 828 } },
+  ]);
+  assert.equal(fields.find((f) => f.key === 'workType')?.value, '', '遠い段からは拾わない');
+});
+
+test('項目名より左にある行は値として拾わない', () => {
+  // 値は必ず項目名の右側にある。左側にあるものは別の欄。
+  const fields = extractBoardFields([
+    { text: '日付', confidence: 96, bbox: { x0: 600, y0: 981, x1: 730, y1: 1047 } },
+    { text: '余計な文字', confidence: 70, bbox: { x0: 100, y0: 985, x1: 300, y1: 1047 } },
+  ]);
+  assert.equal(fields.find((f) => f.key === 'date')?.value, '');
+});
+
+test('項目名に重なった読み違いの断片は残さない', () => {
+  // 「測点」の枠にほぼ重なって「ノハコノいい」が出るのは、項目名を
+  // 二重に読み違えたもの。レビュー画面に意味のない行を並べない。
+  const fields = extractBoardFields([
+    { text: '測点', confidence: 94, bbox: { x0: 95, y0: 542, x1: 228, y1: 609 } },
+    { text: 'ノハコノいい', confidence: 80, bbox: { x0: 107, y0: 592, x1: 231, y1: 609 } },
+    { text: 'NO.12+5.0m', confidence: 91, bbox: { x0: 573, y0: 549, x1: 972, y1: 604 } },
+  ]);
+
+  assert.equal(fields.length, 1);
+  assert.equal(fields[0]!.value, 'NO.12+5.0m');
+});
+
+test('重なっていない読み取り結果は捨てない', () => {
+  // 天候などの欄外メモは、項目名と重なっていなければ残す。
+  const fields = extractBoardFields([
+    { text: '測点', confidence: 94, bbox: { x0: 95, y0: 542, x1: 228, y1: 609 } },
+    { text: 'NO.12+5.0m', confidence: 91, bbox: { x0: 573, y0: 549, x1: 972, y1: 604 } },
+    { text: '晴天 気温22度', confidence: 70, bbox: { x0: 95, y0: 900, x1: 500, y1: 960 } },
+  ]);
+
+  assert.ok(fields.some((f) => f.unmatched && f.value === '晴天 気温22度'));
 });

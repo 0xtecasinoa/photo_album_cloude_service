@@ -100,72 +100,216 @@ export type ExtractedField = {
   unmatched: boolean;
 };
 
+export type BBox = { x0: number; y0: number; x1: number; y1: number };
+
+export type OcrLine = {
+  text: string;
+  confidence: number;
+  /** 認識できた行の位置。取れない場合は文字の並び順だけで判断します。 */
+  bbox?: BBox;
+};
+
+type Prepared = {
+  text: string;
+  confidence: number;
+  bbox?: BBox;
+  isLabel: boolean;
+  alias?: string;
+  labelDef?: (typeof BOARD_LABELS)[number];
+  /** 1文字違いで項目名とみなした場合。レビューで目立たせるために使う。 */
+  fuzzy?: boolean;
+};
+
+/** 編集距離が1以内か。looksLike('剱点','測点') のような1文字誤読を拾う。 */
+export function withinOneEdit(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+
+  // 長いほうを基準に1文字ずつ照合する
+  const [long, short] = a.length >= b.length ? [a, b] : [b, a];
+  let i = 0;
+  let j = 0;
+  let diff = 0;
+  while (i < long.length && j < short.length) {
+    if (long[i] === short[j]) {
+      i += 1;
+      j += 1;
+      continue;
+    }
+    diff += 1;
+    if (diff > 1) return false;
+    i += 1;
+    if (long.length === short.length) j += 1; // 置換
+  }
+  return diff + (long.length - i) + (short.length - j) <= 1;
+}
+
+/**
+ * 行の先頭が項目名かどうかを判定する。
+ *
+ * OCR は項目名を1文字だけ読み違えることがよくあります（「測点」→「剱点」）。
+ * 項目名の語彙は決まっているので、完全一致が無いときだけ1文字違いを許して
+ * 近いものに寄せます。候補が複数並ぶときは寄せません（取り違えのほうが害が大きい）。
+ */
+function matchLabel(text: string): { def: (typeof BOARD_LABELS)[number]; alias: string; fuzzy: boolean } | null {
+  for (const def of BOARD_LABELS) {
+    const alias = def.aliases.find((a) => text.startsWith(a));
+    if (alias) return { def, alias, fuzzy: false };
+  }
+
+  // 1文字違い。短い語は偶然一致しやすいので2文字以上に限る。
+  const near: { def: (typeof BOARD_LABELS)[number]; alias: string }[] = [];
+  for (const def of BOARD_LABELS) {
+    for (const alias of def.aliases) {
+      if (alias.length < 2) continue;
+      const head = text.slice(0, alias.length);
+      if (withinOneEdit(head, alias)) near.push({ def, alias });
+    }
+  }
+
+  if (near.length !== 1) return null;
+  return { ...near[0]!, fuzzy: true };
+}
+
+function prepare(lines: OcrLine[]): Prepared[] {
+  return lines
+    .map((l) => ({ ...l, text: cleanOcrLine(l.text), confidence: Math.round(l.confidence) }))
+    .filter((l) => l.text)
+    .map((l) => {
+      const matched = matchLabel(l.text);
+      return {
+        ...l,
+        isLabel: Boolean(matched),
+        alias: matched?.alias,
+        labelDef: matched?.def,
+        fuzzy: matched?.fuzzy,
+      };
+    });
+}
+
+/** 項目名のあとに続く区切り記号を落として値にする。 */
+function valueAfterAlias(text: string, alias: string): string {
+  return text.slice(alias.length).replace(/^[\s:：|/\-—―]+/, '').trim();
+}
+
+/** 2つの枠がどれだけ重なっているか（0〜1、小さいほうの面積に対する割合）。 */
+function overlapRatio(a: BBox, b: BBox): number {
+  const w = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
+  const h = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
+  if (w <= 0 || h <= 0) return 0;
+  const areaA = (a.x1 - a.x0) * (a.y1 - a.y0);
+  const areaB = (b.x1 - b.x0) * (b.y1 - b.y0);
+  const smaller = Math.min(areaA, areaB);
+  return smaller > 0 ? (w * h) / smaller : 0;
+}
+
+/** 2つの行が同じ段にあるか。中心の高さが互いの高さの範囲に収まるかで見る。 */
+function sameRow(a: BBox, b: BBox): boolean {
+  const aCenter = (a.y0 + a.y1) / 2;
+  const bCenter = (b.y0 + b.y1) / 2;
+  const tolerance = Math.max(a.y1 - a.y0, b.y1 - b.y0) * 0.6;
+  return Math.abs(aCenter - bCenter) <= tolerance;
+}
+
 /**
  * OCR の行から看板の項目を組み立てる。
+ *
+ * 看板は「項目名 | 記入欄」の表なので、項目名とその値は必ず同じ段にあります。
+ * 位置が取れる場合は、同じ段で右側にある行を値として拾います。
+ *
+ * 文字の並び順だけで対応付けると、認識しそこねた断片が項目名の直後に
+ * 紛れ込んだときに、それを値として拾ってしまいます（実際に測点で
+ * 「ノハコノいい」を拾い、正しく読めていた「NO.12+5.0m」を取りこぼしていました）。
  *
  * 判別できなかった行も捨てずに「未分類」として残します。読めた文字を
  * 黙って消すと、現場は写真を見比べて打ち直すことになるためです。
  */
-export function extractBoardFields(
-  lines: { text: string; confidence: number }[],
-): ExtractedField[] {
-  const cleaned = lines
-    .map((l) => ({ text: cleanOcrLine(l.text), confidence: Math.round(l.confidence) }))
-    .filter((l) => l.text);
-
-  const fields: ExtractedField[] = [];
-  const used = new Set<string>();
+export function extractBoardFields(lines: OcrLine[]): ExtractedField[] {
+  const prepared = prepare(lines);
   const consumed = new Set<number>();
+  const used = new Set<string>();
+  const fields: ExtractedField[] = [];
 
-  for (let i = 0; i < cleaned.length; i += 1) {
-    if (consumed.has(i)) continue;
-    const { text, confidence } = cleaned[i]!;
+  // まず項目名のある行から埋める。位置が使えるならそれを優先。
+  prepared.forEach((line, i) => {
+    if (!line.isLabel || !line.labelDef || used.has(line.labelDef.key)) return;
 
-    const match = BOARD_LABELS.find(
-      (l) => !used.has(l.key) && l.aliases.some((a) => text.startsWith(a)),
-    );
+    const def = line.labelDef;
+    let value = valueAfterAlias(line.text, line.alias!);
+    let confidence = line.confidence;
+    consumed.add(i);
 
-    if (match) {
-      const alias = match.aliases.find((a) => text.startsWith(a))!;
-      // 項目名のあとに来る区切り（コロン・空白）を落として値にする
-      let value = text.slice(alias.length).replace(/^[\s:：|/\-—―]+/, '').trim();
-
-      /*
-       * 項目名だけの行になることがある。看板は「項目名 | 記入欄」の表で、
-       * 罫線をまたぐと別の行として読まれるため。
-       * 直後の行が他の項目名でなければ、その行を値として拾う。
-       */
-      if (!value) {
-        const next = cleaned[i + 1];
-        const nextIsLabel =
-          next && BOARD_LABELS.some((l) => l.aliases.some((a) => next.text.startsWith(a)));
-        if (next && !nextIsLabel) {
-          value = next.text;
-          consumed.add(i + 1);
-        }
-      }
-
-      used.add(match.key);
-      fields.push({
-        key: match.key,
-        label: match.label,
-        source: match.source,
-        value,
-        confidence,
-        unmatched: false,
+    if (!value && line.bbox) {
+      // 同じ段で、項目名より右にあるものを探す。
+      let bestIndex = -1;
+      let bestX = Infinity;
+      prepared.forEach((candidate, j) => {
+        if (j === i || consumed.has(j) || candidate.isLabel || !candidate.bbox) return;
+        if (!sameRow(line.bbox!, candidate.bbox)) return;
+        // 少しだけ重なりを許す。枠線の分だけ食い込むことがある。
+        if (candidate.bbox.x0 < line.bbox!.x1 - (line.bbox!.x1 - line.bbox!.x0) * 0.5) return;
+        if (candidate.bbox.x0 < bestX) { bestX = candidate.bbox.x0; bestIndex = j; }
       });
-      continue;
+      if (bestIndex >= 0) {
+        value = prepared[bestIndex]!.text;
+        confidence = prepared[bestIndex]!.confidence;
+        consumed.add(bestIndex);
+      }
     }
 
+    /*
+     * 位置が取れないときだけ、並び順で補う。
+     * 位置が取れているのに同じ段に値が無かった場合は「空欄」が答えで、
+     * ここで次の行を拾うと、別の段の値を取り違えて入れてしまう。
+     */
+    if (!value && !line.bbox) {
+      const next = prepared[i + 1];
+      if (next && !next.isLabel && !consumed.has(i + 1)) {
+        value = next.text;
+        confidence = next.confidence;
+        consumed.add(i + 1);
+      }
+    }
+
+    used.add(def.key);
     fields.push({
-      key: `line-${fields.length + 1}`,
+      key: def.key,
+      label: def.label,
+      source: def.source,
+      value,
+      // 項目名を読み違えていた場合は確信度を下げる。値は合っていても、
+      // どの欄なのかを人に見てもらう必要があるため。
+      confidence: line.fuzzy ? Math.min(confidence, 60) : confidence,
+      unmatched: false,
+    });
+  });
+
+  /*
+   * 項目名の枠にほぼ重なっている低確信の断片は、その項目名を
+   * 二重に読み違えたものなので落とす。
+   * 「測点」の上に「ノハコノいい」が重なって出るのが典型で、
+   * 残すとレビュー画面に意味のない行が並ぶ。
+   * 重なっていない読み取り結果は、読めた文字を捨てないため必ず残す。
+   */
+  const labelBoxes = prepared.filter((l) => l.isLabel && l.bbox).map((l) => l.bbox!);
+  const isLabelArtifact = (line: Prepared): boolean =>
+    Boolean(line.bbox) &&
+    line.confidence < 85 &&
+    labelBoxes.some((box) => overlapRatio(box, line.bbox!) > 0.6);
+
+  // 残りは未分類として後ろに付ける。
+  prepared.forEach((line, i) => {
+    if (consumed.has(i)) return;
+    if (isLabelArtifact(line)) return;
+    fields.push({
+      key: `line-${i + 1}`,
       label: '未分類',
       source: 'manual',
-      value: text,
-      confidence,
+      value: line.text,
+      confidence: line.confidence,
       unmatched: true,
     });
-  }
+  });
 
   return fields;
 }
