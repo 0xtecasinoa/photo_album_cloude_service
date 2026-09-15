@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn, formatDateOnly } from '@/lib/utils';
 import type { WorkTypeNode } from '@/lib/queries/photos';
 
@@ -103,6 +103,15 @@ function Group({
 export function FilterRail({ facets }: { facets: Facets }) {
   const pathname = usePathname();
   const params = useSearchParams();
+  const router = useRouter();
+
+  /** 日付が変わったら、その条件だけ差し替えて移動する。 */
+  const setDate = (key: 'from' | 'to', value: string) => {
+    const next = new URLSearchParams(params.toString());
+    if (value) next.set(key, value);
+    else next.delete(key);
+    router.push(`${pathname}${next.toString() ? `?${next}` : ''}`);
+  };
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const hasAny = [...params.keys()].some((k) => k !== 'view' && k !== 'sort');
@@ -209,12 +218,7 @@ export function FilterRail({ facets }: { facets: Facets }) {
                   type="date"
                   aria-label="撮影日の開始"
                   defaultValue={params.get('from') ?? ''}
-                  onChange={(e) => {
-                    const next = new URLSearchParams(params.toString());
-                    if (e.target.value) next.set('from', e.target.value);
-                    else next.delete('from');
-                    window.location.href = `${pathname}?${next.toString()}`;
-                  }}
+                  onChange={(e) => setDate('from', e.target.value)}
                   className="border-border h-8 w-full rounded-[6px] border px-2 text-[11px]"
                 />
                 <span className="text-ink-faint text-[11px]">〜</span>
@@ -222,12 +226,7 @@ export function FilterRail({ facets }: { facets: Facets }) {
                   type="date"
                   aria-label="撮影日の終了"
                   defaultValue={params.get('to') ?? ''}
-                  onChange={(e) => {
-                    const next = new URLSearchParams(params.toString());
-                    if (e.target.value) next.set('to', e.target.value);
-                    else next.delete('to');
-                    window.location.href = `${pathname}?${next.toString()}`;
-                  }}
+                  onChange={(e) => setDate('to', e.target.value)}
                   className="border-border h-8 w-full rounded-[6px] border px-2 text-[11px]"
                 />
               </div>

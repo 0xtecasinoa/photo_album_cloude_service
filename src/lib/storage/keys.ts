@@ -22,6 +22,8 @@ export const storageKeys = {
   blackboardImportSource: (orgId: string, importId: string, ext: string) =>
     `org/${orgId}/blackboard-imports/${importId}/source.${ext}`,
   orgLogo: (orgId: string, ext: string) => `org/${orgId}/logo.${ext}`,
+  userAvatar: (orgId: string, userId: string, ext: string) =>
+    `org/${orgId}/users/${userId}/avatar.${ext}`,
   export: (orgId: string, exportId: string, filename: string) =>
     `org/${orgId}/exports/${exportId}/${filename}`,
 };

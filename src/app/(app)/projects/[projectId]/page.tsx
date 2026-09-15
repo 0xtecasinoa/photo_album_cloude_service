@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { buttonVariants } from '@/components/ui/button';
 import { PhotoBrowser } from '@/components/photos/photo-browser';
 import { UploadButton } from '@/components/photos/upload-button';
+import { AnalyzeButton } from '@/components/photos/analyze-button';
 import { requireSession } from '@/lib/auth/session';
 import { getProject, capabilitiesForProject } from '@/lib/queries/projects';
 import { listPhotos, photoFacets } from '@/lib/queries/photos';
@@ -69,6 +70,9 @@ export default async function ProjectPhotosPage({
               projectId={projectId}
               canUpload={capabilities.has('photo.upload')}
             />
+            {capabilities.has('photo.edit') && (
+              <AnalyzeButton projectId={projectId} pendingCount={facets.byOcr.undone} />
+            )}
             <ShareDialog
               projectId={projectId}
               links={shareLinks}

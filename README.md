@@ -137,7 +137,8 @@ npm run bench:ocr
   Chromium の印刷機能で生成するため、日本語の禁則処理・字詰めが崩れません
 - **電子納品（CALS/EC）** — `PHOTO/PIC`・`PHOTO/DRA` 構成、`PHOTO.XML`（Shift_JIS）を
   ZIP で出力します。署名が検証できない写真が含まれる場合は出力を停止します
-- **Word（.docx）** — 未実装
+- **Word（.docx）** — 写真の下に管理項目の表と説明文を置いた文書の体裁。
+  先方が文章を書き足す前提の報告書に使います
 
 ---
 
@@ -504,7 +505,6 @@ await requireProjectCapability(userId, projectId, 'photo.delete');
 
 - 決済の連携（有料プランのお申し込みはお問い合わせ経由。無料プランへの変更と
   無料トライアルの開始は画面から行えます）
-- Word（.docx）出力
 - アルバムの編集（写真区分ごとの並べ替え・章立て）
 - 図面（参考図）の取り込みと写真への紐付け
 - 二要素認証

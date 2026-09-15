@@ -11,6 +11,7 @@ import {
 } from '@/app/(app)/members/actions';
 import type { MemberListItem, OrgRole } from '@/lib/queries/members';
 import { formatShotAt } from '@/lib/utils';
+import { AvatarUpload } from './avatar-upload';
 
 const PER_PAGE = 10;
 
@@ -206,12 +207,16 @@ export function MembersTable({
                     <tr key={m.id} className={`border-border-subtle border-t ${m.isActive ? '' : 'bg-surface-sunken/50'}`}>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
-                          {/* eslint-disable-next-line @next/next/no-img-element -- 外部プロバイダのアバター */}
-                          <img
-                            src={m.image || '/brand/avatar-placeholder.svg'}
-                            alt=""
-                            className="size-[52px] shrink-0 rounded-full object-cover"
-                          />
+                          {isSelf ? (
+                            <AvatarUpload currentUrl={m.image} name={m.name ?? m.email} />
+                          ) : (
+                            /* eslint-disable-next-line @next/next/no-img-element -- 保存先から配信する画像 */
+                            <img
+                              src={m.image || '/brand/avatar-placeholder.svg'}
+                              alt=""
+                              className="size-[52px] shrink-0 rounded-full object-cover"
+                            />
+                          )}
                           <div>
                             <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-ink">
                               {m.name ?? m.email}

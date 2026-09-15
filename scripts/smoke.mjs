@@ -149,11 +149,31 @@ try {
     (await page.getByRole('button', { name: 'リスト表示' }).getAttribute('aria-pressed')) === 'true',
   );
 
-  const group = page.getByRole('button', { name: /^工種/ }).first();
+  const group = page.getByRole('button', { name: /工程・分類/ }).first();
   const groupBefore = await group.getAttribute('aria-expanded');
   await group.click();
   await page.waitForTimeout(300);
   check('絞り込みを開閉できる', groupBefore !== (await group.getAttribute('aria-expanded')));
+
+  // 看板の文字まで含めて探せること。管理項目だけでは目当てに届かない。
+  await page.getByPlaceholder('写真・看板の文字を検索').fill('かぶり');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(2000);
+  check(
+    '写真・看板の文字を検索できる',
+    (await page.locator('text=適用中のフィルター').count()) > 0,
+  );
+
+  // どの条件で絞られているかが見え、ひとつずつ外せること。
+  check('適用中のフィルターが出る', (await page.locator('a:has-text("検索:")').count()) > 0);
+  await page.locator('a:has-text("すべてクリア")').click();
+  await page.waitForTimeout(1500);
+  check('すべてクリアで絞り込みが外れる', (await page.locator('text=適用中のフィルター').count()) === 0);
+
+  // 並び替え
+  await page.selectOption('#photo-sort', 'takenDesc');
+  await page.waitForTimeout(1500);
+  check('並び替えができる', new URL(page.url()).searchParams.get('sort') === 'takenDesc');
 
   // ---------- 共有リンク ----------
   await page.getByRole('button', { name: /^共有/ }).click();

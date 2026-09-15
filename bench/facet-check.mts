@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { eq, isNull, and } from 'drizzle-orm';
+import { isNull } from 'drizzle-orm';
 import { db } from '@/db';
 import { projects } from '@/db/schema/project';
 import { photoFacets, listPhotos } from '@/lib/queries/photos';
