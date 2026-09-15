@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useMemo, useState } from 'react';
+import { useActionState, useMemo, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Save, Filter, Grid3x3, Plus, Loader2, Trash2, FilePlus2, Star, ScanLine } from 'lucide-react';
@@ -101,12 +101,13 @@ function createStandardLayout(): BlackboardLayout {
   };
 }
 
-function SaveButton({ canManage }: { canManage: boolean }) {
+function SaveButton({ canManage, isNew }: { canManage: boolean; isNew: boolean }) {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" variant="primary" size="lg" disabled={pending || !canManage}>
       {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Save className="size-4" aria-hidden />}
-      {pending ? '保存中…' : '案件メンバー全員へ配布保存'}
+      {/* 押す前に、新しく作るのか上書きするのかが分かるようにする。 */}
+      {pending ? '保存中…' : isNew ? '新規作成して全員へ配布' : '上書き保存して全員へ配布'}
     </Button>
   );
 }
@@ -152,6 +153,9 @@ export function BlackboardEditor({
   const loadTemplate = (id: string) => {
     const t = templates.find((x) => x.id === id);
     if (!t) return;
+    requestAnimationFrame(() => {
+      nameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
     setTemplateId(t.id);
     setLayout(t.layout);
     setTemplateName(t.name);
@@ -160,6 +164,8 @@ export function BlackboardEditor({
     setFontFamily(t.layout.fields[0]?.valueStyle.fontFamily ?? FONT_FAMILIES[0]!.value);
     setSelectedId(t.layout.fields[0]?.id ?? null);
   };
+
+  const nameRef = useRef<HTMLInputElement>(null);
 
   const startNew = () => {
     const fresh = createStandardLayout();
@@ -170,6 +176,17 @@ export function BlackboardEditor({
     setIsDefault(false);
     setFontFamily(FONT_FAMILIES[0]!.value);
     setSelectedId(fresh.fields[0]?.id ?? null);
+
+    /*
+     * 押しても画面が変わったように見えないと「効いていない」と受け取られる。
+     * 黒板の見本の値は新規でも同じなので、見た目がほとんど変わらない。
+     * 名前を入れる欄まで運んで、そのまま打ち替えられる状態にする。
+     */
+    requestAnimationFrame(() => {
+      nameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      nameRef.current?.focus();
+      nameRef.current?.select();
+    });
   };
 
   /** 保存する値。画面で選んだ書体を全項目のスタイルへ焼き込む。 */
@@ -233,7 +250,7 @@ export function BlackboardEditor({
             <input type="hidden" name="workType" value={workType} />
             <input type="hidden" name="isDefault" value={String(isDefault)} />
             <input type="hidden" name="layout" value={JSON.stringify(layoutToSave)} />
-            <SaveButton canManage={canManage} />
+            <SaveButton canManage={canManage} isNew={templateId === null} />
           </form>
         }
       />
@@ -346,16 +363,27 @@ export function BlackboardEditor({
 
           {/* ---- Board-wide settings ---- */}
           <section className="mt-12">
-            <h2 className="text-brand flex items-center gap-2.5 text-[17px] font-bold">
-              <Filter className="size-5" strokeWidth={1.8} aria-hidden />
-              看板全体設定（名称・背景・罫線・書体）
-            </h2>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-brand flex items-center gap-2.5 text-[17px] font-bold">
+                <Filter className="size-5" strokeWidth={1.8} aria-hidden />
+                看板全体設定（名称・背景・罫線・書体）
+              </h2>
+              {/* 新規なのか、どれを直しているのかが一目で分かるようにする。 */}
+              {templateId === null ? (
+                <Badge variant="admin" className="px-4 py-1.5">新規作成中</Badge>
+              ) : (
+                <Badge variant="neutral" className="px-4 py-1.5">
+                  編集中：{templates.find((t) => t.id === templateId)?.name ?? '保存済みテンプレート'}
+                </Badge>
+              )}
+            </div>
 
-            <div className="mt-6 grid gap-x-9 gap-y-6 md:grid-cols-2">
+            <div className="grid gap-x-9 gap-y-6 md:grid-cols-2">
               <div>
                 <Label htmlFor="tpl-name">看板テンプレ名</Label>
                 <Input
                   id="tpl-name"
+                  ref={nameRef}
                   className="mt-2"
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}

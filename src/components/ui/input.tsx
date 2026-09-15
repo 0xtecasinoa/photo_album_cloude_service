@@ -1,8 +1,14 @@
 import { cn } from '@/lib/utils';
 
-export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+/** ref を受け取れるようにしてある（入力欄へ運んで選択状態にする用途がある）。 */
+export function Input({
+  className,
+  ref,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement> & { ref?: React.Ref<HTMLInputElement> }) {
   return (
     <input
+      ref={ref}
       className={cn(
         'h-[52px] w-full rounded-[8px] border border-border bg-white px-4 text-sm text-ink',
         'placeholder:text-ink-faint',

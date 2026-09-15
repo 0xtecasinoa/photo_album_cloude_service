@@ -91,6 +91,26 @@ try {
   );
   check('背景色を変更できる', bg !== 'rgb(19, 42, 34)', bg);
 
+  /*
+   * 新規作成が「効いていない」ように見えていた不具合の再発防止。
+   * 状態は変わっていたが、黒板の見本の値が同じで、名前の欄も画面外に
+   * あったため、押しても何も起きないように見えていた。
+   */
+  await page.getByRole('button', { name: /新しいテンプレート/ }).click();
+  await page.waitForTimeout(900);
+  check(
+    '新規作成に切り替わったことが分かる',
+    (await page.locator('text=新規作成中').count()) > 0,
+  );
+  check(
+    '新規作成では保存ボタンの文言が変わる',
+    (await page.locator('button[type=submit]').filter({ hasText: '新規作成して' }).count()) > 0,
+  );
+  check(
+    '新規作成すると名前の欄に移動する',
+    (await page.evaluate(() => document.activeElement?.id)) === 'tpl-name',
+  );
+
   const indent = page.locator('#cell-indent');
   await indent.fill('3');
   await indent.dispatchEvent('input');
