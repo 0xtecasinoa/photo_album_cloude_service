@@ -190,3 +190,16 @@ test('重なっていない読み取り結果は捨てない', () => {
 
   assert.ok(fields.some((f) => f.unmatched && f.value === '晴天 気温22度'));
 });
+
+test('値を項目名と取り違えない', () => {
+  // 工種の値「橋梁補修工」は、項目名「橋号」と先頭2文字が1文字違い。
+  // 先頭だけ見て寄せると、値が項目名として消費され工種が空になる。
+  const fields = extractBoardFields([
+    { text: '工種', confidence: 94, bbox: { x0: 95, y0: 320, x1: 230, y1: 390 } },
+    { text: '橋梁補修工', confidence: 92, bbox: { x0: 570, y0: 320, x1: 900, y1: 390 } },
+  ]);
+
+  const workType = fields.find((f) => f.key === 'workType');
+  assert.equal(workType?.value, '橋梁補修工');
+  assert.ok(!fields.some((f) => f.key === 'structureNo'), '橋号として拾わない');
+});

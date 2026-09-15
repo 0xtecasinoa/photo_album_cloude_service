@@ -59,6 +59,9 @@ export const fieldSourceSchema = z.enum([
   'photo.title',
   'photo.shootingLocation',
   'photo.controlValue',
+  'photo.designValue',
+  'photo.measuredValue',
+  'photo.structureNo',
 ]);
 
 export type FieldSource = z.infer<typeof fieldSourceSchema>;
@@ -83,6 +86,9 @@ export const FIELD_SOURCE_LABELS_JA: Record<FieldSource, string> = {
   'photo.title': '写真タイトル',
   'photo.shootingLocation': '撮影箇所',
   'photo.controlValue': '施工管理値',
+  'photo.designValue': '設計寸法',
+  'photo.measuredValue': '実測寸法',
+  'photo.structureNo': '橋号・施工状況',
 };
 
 export const blackboardFieldSchema = z.object({

@@ -29,27 +29,29 @@ import {
 /** Board background presets, named the way a site foreman would name them. */
 const BACKGROUNDS = [
   { value: '#132A22', label: '濃緑（伝統工事黒板）' },
+  { value: '#0B3B6F', label: '青（標準工事用）' },
+  { value: '#FFFFFF', label: '白（ホワイトボード）' },
+  { value: '#8B6B43', label: '木目（ナチュラル）' },
   { value: '#1B5E20', label: '緑（標準）' },
   { value: '#1A1A1A', label: '黒（コントラスト重視）' },
-  { value: '#0B3B6F', label: '紺（土木向け）' },
-  { value: '#FFFFFF', label: '白（ホワイトボード）' },
 ];
 
 const RULE_WIDTHS = [
   { value: 1, label: '細線（1PX）' },
-  { value: 2, label: '標準（2PX）' },
-  { value: 4, label: '太線（4PX）' },
+  { value: 2, label: '中太（2PX）' },
+  { value: 4, label: '極太（4PX）' },
   { value: 0, label: '罫線なし' },
 ];
 
 const FONT_FAMILIES = [
   { value: 'Zen Kaku Gothic New', label: 'ゴシック体（高視認性）' },
-  { value: 'Noto Serif JP', label: '明朝体（文書向け）' },
+  { value: 'Noto Serif JP', label: '明朝体（格式高）' },
+  { value: 'var(--font-klee), Yu Gothic', label: '手書き風（味わい）' },
   { value: 'Yu Gothic', label: '游ゴシック（標準）' },
 ];
 
 const SIZE_STEPS = [
-  { value: 18, label: '小（補足）' },
+  { value: 18, label: '小（小文字）' },
   { value: 26, label: '中（標準）' },
   { value: 34, label: '大（強調）' },
   { value: 44, label: '特大（遠距離視認）' },

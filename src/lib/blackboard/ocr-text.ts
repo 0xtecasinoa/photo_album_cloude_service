@@ -84,6 +84,9 @@ export const BOARD_LABELS: { key: string; label: string; aliases: string[]; sour
   { key: 'contractor', label: '施工者', source: 'project.contractorName', aliases: ['施工者', '請負者', '施工業者', '受注者'] },
   { key: 'client', label: '発注者', source: 'project.clientName', aliases: ['発注者'] },
   { key: 'controlValue', label: '施工管理値', source: 'photo.controlValue', aliases: ['施工管理値', '管理値', '規格値', '測定値'] },
+  { key: 'designValue', label: '設計寸法', source: 'photo.designValue', aliases: ['設計寸法', '設計値', '設計'] },
+  { key: 'measuredValue', label: '実測寸法', source: 'photo.measuredValue', aliases: ['実測寸法', '実測値', '実測'] },
+  { key: 'structureNo', label: '橋号・施工状況', source: 'photo.structureNo', aliases: ['橋号', '施工状況'] },
   { key: 'title', label: '写真タイトル', source: 'photo.title', aliases: ['写真タイトル', '表題', 'タイトル'] },
   { key: 'date', label: '日付', source: 'auto.date', aliases: ['日付', '撮影年月日', '年月日', '撮影日'] },
   { key: 'witness', label: '立会者', source: 'manual', aliases: ['立会者', '立会', '監督員'] },
@@ -157,13 +160,20 @@ function matchLabel(text: string): { def: (typeof BOARD_LABELS)[number]; alias: 
     if (alias) return { def, alias, fuzzy: false };
   }
 
-  // 1文字違い。短い語は偶然一致しやすいので2文字以上に限る。
+  /*
+   * 1文字違い。行の「先頭だけ」を見て寄せると、値を項目名と取り違えます。
+   * 実際に、工種の値「橋梁補修工」が項目名「橋号」と先頭2文字が
+   * 1文字違いだったため項目名として消費され、工種が空になりました。
+   *
+   * 寄せるのは「行そのものが項目名とほぼ同じ」ときだけにします。
+   * 項目名だけの行（「剱点」→「測点」）は拾えて、
+   * 後ろに値が続く長い行は拾いません。
+   */
   const near: { def: (typeof BOARD_LABELS)[number]; alias: string }[] = [];
   for (const def of BOARD_LABELS) {
     for (const alias of def.aliases) {
       if (alias.length < 2) continue;
-      const head = text.slice(0, alias.length);
-      if (withinOneEdit(head, alias)) near.push({ def, alias });
+      if (withinOneEdit(text, alias)) near.push({ def, alias });
     }
   }
 
