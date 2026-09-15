@@ -53,3 +53,6 @@ next-env.d.ts
 
 # OCR 言語データ（npm run setup:ocr で取得）
 .tessdata/
+
+# 本番の環境変数
+.env.production

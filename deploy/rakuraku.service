@@ -1,0 +1,21 @@
+[Unit]
+Description=らくらく写真台帳
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin/Documents/Project/Wordpress-app
+Environment=NODE_ENV=production
+Environment=PATH=/home/admin/.local/node/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=/home/admin/Documents/Project/Wordpress-app/.env.production
+ExecStart=/home/admin/.local/node/bin/node node_modules/next/dist/bin/next start -p 3000
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
