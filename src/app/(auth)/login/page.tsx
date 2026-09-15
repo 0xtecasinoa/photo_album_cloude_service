@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LoginForm } from './login-form';
 import { GoogleButton } from '@/components/app/google-button';
+import { redirect } from 'next/navigation';
 import { safeCallbackUrl } from '@/lib/auth/callback-url';
+import { getSessionContext } from '@/lib/auth/session';
 
 export const metadata: Metadata = { title: 'ログイン' };
 
@@ -13,6 +15,12 @@ export default async function LoginPage({
 }) {
   const { callbackUrl, invited } = await searchParams;
   const safeCallback = safeCallbackUrl(callbackUrl);
+
+  /*
+   * すでに入っている人には、もう一度ログイン画面を見せない。
+   * 見せると「入れていない」と受け取られ、同じ資格情報を打ち直すことになる。
+   */
+  if (await getSessionContext()) redirect(safeCallback);
 
   return (
     <>

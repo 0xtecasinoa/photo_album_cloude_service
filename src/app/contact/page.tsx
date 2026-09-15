@@ -23,10 +23,13 @@ export default async function ContactPage({
 
   // ログイン中なら会社名や連絡先は分かっているので埋めておく。
   const ctx = await getSessionContext();
+  // ログイン中はヘッダーの「ログイン」を出さない。入っているのに出ていると、
+  // もう一度ログインが必要だと受け取られる。
+  const headerUser = ctx ? { name: ctx.user.name } : null;
 
   return (
     <>
-      <SiteHeader />
+      <SiteHeader user={headerUser} />
 
       <main>
         <section className="bg-brand pt-[150px] pb-20">

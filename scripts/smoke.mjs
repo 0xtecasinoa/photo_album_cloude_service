@@ -442,6 +442,29 @@ try {
   // ---------- サービス紹介ページ ----------
   await page.goto(`${BASE}/`, { waitUntil: 'load' });
   await page.waitForTimeout(2000);
+
+  /*
+   * ログイン中に「ログイン」が出ていると、入れていないと受け取られ、
+   * 同じ資格情報を打ち直すことになる。
+   */
+  check(
+    'ログイン中はヘッダーにログインを出さない',
+    (await page.locator('header a:has-text("ログイン")').count()) === 0,
+  );
+  const dashLink = page.locator('header a:has-text("ダッシュボードへ")').filter({ visible: true });
+  check('ログイン中はダッシュボードへの導線が出る', (await dashLink.count()) === 1);
+
+  // ログイン画面を開いても、入り直しを求めない。
+  await page.goto(`${BASE}/login`, { waitUntil: 'load' });
+  await page.waitForTimeout(1200);
+  check(
+    'ログイン中に /login を開くと業務画面へ送られる',
+    new URL(page.url()).pathname === '/dashboard',
+    new URL(page.url()).pathname,
+  );
+
+  await page.goto(`${BASE}/`, { waitUntil: 'load' });
+  await page.waitForTimeout(1500);
   const q = page.getByRole('button', { name: /セキュリティは安全ですか/ });
   const qBefore = await q.getAttribute('aria-expanded');
   await q.click();

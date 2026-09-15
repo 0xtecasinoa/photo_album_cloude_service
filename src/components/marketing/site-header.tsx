@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { BrandLogo } from '@/components/brand-logo';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const LINKS = [
@@ -14,7 +14,16 @@ const LINKS = [
   { href: '#delivery', label: '電子納品' },
 ];
 
-export function SiteHeader() {
+export type SiteHeaderUser = { name: string } | null;
+
+/**
+ * 紹介ページのヘッダー。
+ *
+ * ログイン中かどうかで右側を変えます。入っているのに「ログイン」が
+ * 出ていると、もう一度ログインが必要だと受け取られるためです。
+ * 判定はサーバー側で行い、結果だけを受け取ります。
+ */
+export function SiteHeader({ user = null }: { user?: SiteHeaderUser }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -37,18 +46,33 @@ export function SiteHeader() {
         </nav>
 
         <div className="ml-auto hidden items-center gap-3 lg:ml-0 lg:flex">
-          <Link
-            href="/login"
-            className="rounded-[30px] border border-white/70 px-6 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-white/15"
-          >
-            ログイン
-          </Link>
-          <Link
-            href="/signup"
-            className="bg-accent hover:bg-accent-hover rounded-[30px] px-6 py-2.5 text-[14px] font-bold text-white transition-colors"
-          >
-            無料で試してみる
-          </Link>
+          {user ? (
+            <>
+              <span className="text-[14px] text-white/80">{user.name} さん</span>
+              <Link
+                href="/dashboard"
+                className="bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-[30px] px-6 py-2.5 text-[14px] font-bold text-white transition-colors"
+              >
+                <LayoutDashboard className="size-4" aria-hidden />
+                ダッシュボードへ
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-[30px] border border-white/70 px-6 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-white/15"
+              >
+                ログイン
+              </Link>
+              <Link
+                href="/signup"
+                className="bg-accent hover:bg-accent-hover rounded-[30px] px-6 py-2.5 text-[14px] font-bold text-white transition-colors"
+              >
+                無料で試してみる
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -80,18 +104,30 @@ export function SiteHeader() {
             </a>
           ))}
           <div className="border-border-subtle mt-2 flex gap-3 border-t p-2 pt-4">
-            <Link
-              href="/login"
-              className="border-brand text-brand flex-1 rounded-[30px] border px-5 py-2.5 text-center text-[14px] font-medium"
-            >
-              ログイン
-            </Link>
-            <Link
-              href="/signup"
-              className="bg-accent flex-1 rounded-[30px] px-5 py-2.5 text-center text-[14px] font-bold text-white"
-            >
-              無料で試してみる
-            </Link>
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="bg-accent flex flex-1 items-center justify-center gap-2 rounded-[30px] px-5 py-2.5 text-center text-[14px] font-bold text-white"
+              >
+                <LayoutDashboard className="size-4" aria-hidden />
+                ダッシュボードへ
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="border-brand text-brand flex-1 rounded-[30px] border px-5 py-2.5 text-center text-[14px] font-medium"
+                >
+                  ログイン
+                </Link>
+                <Link
+                  href="/signup"
+                  className="bg-accent flex-1 rounded-[30px] px-5 py-2.5 text-center text-[14px] font-bold text-white"
+                >
+                  無料で試してみる
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       </div>

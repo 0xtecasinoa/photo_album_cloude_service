@@ -1,13 +1,19 @@
 import type { Metadata } from 'next';
 import { SiteHeader } from '@/components/marketing/site-header';
+import { getSessionContext } from '@/lib/auth/session';
 import { SiteFooter } from '@/components/marketing/site-footer';
 
 export const metadata: Metadata = { title: 'プライバシーポリシー' };
 
-export default function Page() {
+export default async function Page() {
+  // ログイン中はヘッダーの「ログイン」を出さない。入っているのに出ていると、
+  // もう一度ログインが必要だと受け取られる。
+  const ctx = await getSessionContext();
+  const headerUser = ctx ? { name: ctx.user.name } : null;
+
   return (
     <>
-      <SiteHeader />
+      <SiteHeader user={headerUser} />
       <main>
         <section className="bg-brand pt-[150px] pb-20">
           <div className="mx-auto max-w-[1240px] px-6 lg:px-10">
