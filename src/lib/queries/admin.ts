@@ -1,4 +1,5 @@
-import { and, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm';
+import { randomBytes } from 'node:crypto';
+import { and, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   organizations,
@@ -7,6 +8,8 @@ import {
   projects,
   photos,
   contactInquiries,
+  auditLogs,
+  verificationTokens,
 } from '@/db/schema';
 
 /**
@@ -201,6 +204,8 @@ export type AdminInquiry = {
   message: string | null;
   planInterest: string | null;
   status: string;
+  response: string | null;
+  respondedAt: Date | null;
   organizationName: string | null;
   createdAt: Date;
 };
@@ -219,6 +224,8 @@ export async function listInquiries(status?: string): Promise<AdminInquiry[]> {
       message: contactInquiries.message,
       planInterest: contactInquiries.planInterest,
       status: contactInquiries.status,
+      response: contactInquiries.response,
+      respondedAt: contactInquiries.respondedAt,
       organizationName: organizations.name,
       createdAt: contactInquiries.createdAt,
     })
@@ -254,4 +261,96 @@ export async function setUserActive(userId: string, isActive: boolean) {
     .where(and(eq(users.id, userId), eq(users.isPlatformAdmin, false)))
     .returning({ id: users.id, email: users.email, name: users.name });
   return row ?? null;
+}
+
+/**
+ * 問い合わせへの回答を控える。
+ *
+ * 実際の返信はメールで行いますが、「誰が何と答えたか」が残っていないと
+ * 二重対応や言った言わないが起きるため、内容をここに残します。
+ */
+export async function saveInquiryResponse(
+  inquiryId: string,
+  response: string,
+  respondedById: string,
+) {
+  const [row] = await db
+    .update(contactInquiries)
+    .set({
+      response,
+      respondedAt: new Date(),
+      respondedById,
+      // 回答したら未対応のままにはしない。
+      status: sql`case when ${contactInquiries.status} = 'new' then 'in_progress' else ${contactInquiries.status} end`,
+    })
+    .where(eq(contactInquiries.id, inquiryId))
+    .returning({ id: contactInquiries.id, company: contactInquiries.company });
+  return row ?? null;
+}
+
+export type LoginEvent = {
+  id: string;
+  action: string;
+  actorEmail: string | null;
+  actorName: string | null;
+  organizationName: string;
+  ipAddress: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: Date;
+};
+
+/**
+ * 全社のログイン履歴。
+ *
+ * 「心当たりのない時刻にログインがある」という問い合わせに答えるための画面なので、
+ * 成功だけでなく失敗も返します。
+ */
+export async function listLoginEvents(limit = 200): Promise<LoginEvent[]> {
+  return db
+    .select({
+      id: auditLogs.id,
+      action: auditLogs.action,
+      actorEmail: auditLogs.actorEmail,
+      actorName: auditLogs.actorName,
+      organizationName: organizations.name,
+      ipAddress: auditLogs.ipAddress,
+      metadata: auditLogs.metadata,
+      createdAt: auditLogs.createdAt,
+    })
+    .from(auditLogs)
+    .innerJoin(organizations, eq(organizations.id, auditLogs.organizationId))
+    .where(inArray(auditLogs.action, ['auth.login', 'auth.login_failed']))
+    .orderBy(desc(auditLogs.createdAt))
+    .limit(limit);
+}
+
+/**
+ * パスワード再設定リンクを発行する。
+ *
+ * 運営が新しいパスワードを決めて伝える形にはしません。他人のパスワードを
+ * 知っている状態を作らないため、本人が設定する導線（招待と同じ仕組み）を使います。
+ */
+export async function issuePasswordReset(
+  userId: string,
+): Promise<{ token: string; email: string; expires: Date } | null> {
+  const [user] = await db
+    .select({ id: users.id, email: users.email, isPlatformAdmin: users.isPlatformAdmin })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!user || user.isPlatformAdmin) return null;
+
+  const token = randomBytes(32).toString('hex');
+  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  // 同じ相手の古いリンクは無効にする。複数生きていると、どれが最新か分からない。
+  await db.delete(verificationTokens).where(eq(verificationTokens.identifier, `invite:${user.email}`));
+  await db.insert(verificationTokens).values({
+    identifier: `invite:${user.email}`,
+    token,
+    expires,
+  });
+
+  return { token, email: user.email, expires };
 }

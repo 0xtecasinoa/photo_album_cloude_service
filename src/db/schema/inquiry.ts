@@ -26,6 +26,10 @@ export const contactInquiries = pgTable(
     userId: uuid('user_id'),
 
     status: text('status').notNull().default('new'), // new | in_progress | closed
+    /** 運営が返した内容の控え。誰が何と答えたかを残すため。 */
+    response: text('response'),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+    respondedById: uuid('responded_by_id'),
     ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

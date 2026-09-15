@@ -8,6 +8,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { users, accounts, sessions, verificationTokens, organizations, roles } from '@/db/schema';
+import { recordAudit } from '@/lib/audit';
 import { SYSTEM_ROLES } from '@/lib/acl/capabilities';
 import { slugify } from '@/lib/auth/provision';
 import { env } from '@/lib/env';
@@ -123,10 +124,48 @@ const providers: NextAuthConfig['providers'] = [
       // Deliberately one outcome for every failure mode — wrong password, unknown
       // address, and deactivated account must be indistinguishable from outside.
       if (!user || !user.passwordHash || !user.isActive || !user.organizationIsActive || !ok) {
+        /*
+         * 失敗も記録する。「誰かが心当たりのない時刻に入ろうとしている」は
+         * お客様から実際に聞かれることで、記録がないと答えられない。
+         * ただし存在しないメールアドレスは会社を特定できないため記録しない
+         * （監査ログは会社に属する）。
+         */
+        if (user) {
+          await recordAudit({
+            organizationId: user.organizationId,
+            actorId: user.id,
+            actorEmail: user.email,
+            actorName: user.name,
+            action: 'auth.login_failed',
+            targetType: 'user',
+            targetId: user.id,
+            targetLabel: user.email,
+            metadata: {
+              reason: !user.passwordHash
+                ? 'no_password'
+                : !user.isActive
+                  ? 'user_suspended'
+                  : !user.organizationIsActive
+                    ? 'organization_suspended'
+                    : 'bad_password',
+            },
+          });
+        }
         return null;
       }
 
       await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
+
+      await recordAudit({
+        organizationId: user.organizationId,
+        actorId: user.id,
+        actorEmail: user.email,
+        actorName: user.name,
+        action: 'auth.login',
+        targetType: 'user',
+        targetId: user.id,
+        targetLabel: user.email,
+      });
 
       return {
         id: user.id,

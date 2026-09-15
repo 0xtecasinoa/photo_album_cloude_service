@@ -309,7 +309,58 @@ try {
   await adminPage.waitForTimeout(800);
   check('お問い合わせが読める', (await adminPage.locator('ul > li').count()) > 0);
 
+  // 回答の控えを残せること。
+  const firstInquiry = adminPage.locator('ul > li').first();
+  await firstInquiry.locator('textarea').fill('スモークからの回答控え');
+  await firstInquiry.getByRole('button', { name: '回答を保存' }).click();
+  await adminPage.waitForTimeout(2000);
+  check(
+    'お問い合わせに回答を残せる',
+    (await firstInquiry.locator('[role=status]').count()) > 0,
+  );
+
+  // ログイン履歴。失敗の記録がないと、心当たりのないログインの調査ができない。
+  await adminPage.goto(`${BASE}/admin/logins`, { waitUntil: 'load' });
+  await adminPage.waitForTimeout(800);
+  const loginRows = await adminPage.locator('tbody tr').count();
+  check('ログイン履歴が記録されている', loginRows > 0, `${loginRows} 件`);
+  await adminPage.getByRole('button', { name: '失敗のみ' }).click();
+  await adminPage.waitForTimeout(400);
+  check(
+    'ログイン失敗も記録されている',
+    (await adminPage.locator('tbody tr').count()) > 0,
+  );
+
+  // お知らせを配信し、利用者側に届くこと。
+  await adminPage.goto(`${BASE}/admin/notifications`, { waitUntil: 'load' });
+  await adminPage.waitForTimeout(800);
+  const noticeTitle = `スモーク配信 ${Date.now()}`;
+  await adminPage.fill('#nt-title', noticeTitle);
+  await adminPage.fill('#nt-body', 'スモークテストからの配信です。');
+  await adminPage.getByRole('button', { name: '配信する' }).click();
+  await adminPage.waitForTimeout(2500);
+  check('お知らせを配信できる', (await adminPage.locator('[role=status]').count()) > 0);
+
   await adminCtx.close();
+
+  // ---------- 通知が利用者に届く ----------
+  await page.goto(`${BASE}/dashboard`, { waitUntil: 'load' });
+  await page.waitForTimeout(1200);
+  const bell = await page.locator('a[aria-label^="通知"]').getAttribute('aria-label');
+  check('ベルに未読件数が出る', /\d+件/.test(bell ?? ''), bell ?? '');
+
+  await page.goto(`${BASE}/notifications`, { waitUntil: 'load' });
+  await page.waitForTimeout(1000);
+  check(
+    '配信したお知らせが利用者に届く',
+    (await page.locator(`text=${noticeTitle}`).count()) > 0,
+  );
+
+  // 開いたら既読になり、ベルの数字が戻ること。
+  await page.goto(`${BASE}/dashboard`, { waitUntil: 'load' });
+  await page.waitForTimeout(1200);
+  const bellAfter = await page.locator('a[aria-label^="通知"]').getAttribute('aria-label');
+  check('開いたお知らせは既読になる', !/\d+件/.test(bellAfter ?? ''), bellAfter ?? '');
 
   // ---------- サービス紹介ページ ----------
   await page.goto(`${BASE}/`, { waitUntil: 'load' });

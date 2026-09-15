@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ShieldCheck, LayoutDashboard, Building2, Users, Mail, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, Building2, Users, Mail, Megaphone, KeyRound, ArrowLeft } from 'lucide-react';
 import { requirePlatformAdmin } from '@/lib/auth/admin';
 import { signOutAction } from '@/app/(app)/actions';
 
@@ -8,6 +8,8 @@ const NAV = [
   { href: '/admin/organizations', label: '会社', icon: Building2 },
   { href: '/admin/users', label: 'ユーザー', icon: Users },
   { href: '/admin/inquiries', label: 'お問い合わせ', icon: Mail },
+  { href: '/admin/notifications', label: 'お知らせ配信', icon: Megaphone },
+  { href: '/admin/logins', label: 'ログイン履歴', icon: KeyRound },
 ];
 
 /**

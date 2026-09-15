@@ -6,3 +6,4 @@ export * from './blackboard';
 export * from './share';
 export * from './audit';
 export * from './inquiry';
+export * from './notification';

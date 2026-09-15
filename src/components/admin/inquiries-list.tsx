@@ -3,8 +3,8 @@
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
-import { Loader2, Mail, Phone, Building2 } from 'lucide-react';
-import { setInquiryStatusAction, type AdminActionState } from '@/app/admin/actions';
+import { Loader2, Mail, Phone, Building2, Reply, Check } from 'lucide-react';
+import { setInquiryStatusAction, saveInquiryResponseAction, type AdminActionState } from '@/app/admin/actions';
 import type { AdminInquiry } from '@/lib/queries/admin';
 import { formatShotAt } from '@/lib/utils';
 import { isPlanKey, PLANS } from '@/lib/plans';
@@ -46,6 +46,53 @@ function StatusButton({
     >
       {pending && !current ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : label}
     </button>
+  );
+}
+
+function ResponseSubmit() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="flex h-9 items-center gap-1.5 rounded-[6px] border border-white/20 px-4 text-[12px] text-white/80 transition-colors hover:bg-white/10 disabled:opacity-50"
+    >
+      {pending ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : <Check className="size-3.5" aria-hidden />}
+      {pending ? '保存中…' : '回答を保存'}
+    </button>
+  );
+}
+
+function ResponseForm({ inquiry }: { inquiry: AdminInquiry }) {
+  const [state, formAction] = useActionState<AdminActionState, FormData>(saveInquiryResponseAction, {});
+
+  return (
+    <form action={formAction} className="mt-4">
+      <label htmlFor={`res-${inquiry.id}`} className="mb-2 flex items-center gap-1.5 text-[12px] text-white/60">
+        <Reply className="size-3.5" aria-hidden />
+        回答内容の控え
+      </label>
+      <textarea
+        id={`res-${inquiry.id}`}
+        name="response"
+        rows={3}
+        maxLength={4000}
+        defaultValue={inquiry.response ?? ''}
+        placeholder="返信した内容を記録します（実際の送信はメールで行ってください）"
+        className="w-full rounded-[8px] border border-white/15 bg-black/25 px-4 py-3 text-[13px] text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+      />
+      <input type="hidden" name="inquiryId" value={inquiry.id} />
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <ResponseSubmit />
+        {inquiry.respondedAt && (
+          <span className="text-[11px] text-white/40">最終更新 {formatShotAt(inquiry.respondedAt)}</span>
+        )}
+        {state.error && <span role="alert" className="text-[12px] text-[#FF9C93]">{state.error}</span>}
+        {state.message && (
+          <span role="status" className="text-[12px] text-[#8EFF9F]">保存しました</span>
+        )}
+      </div>
+    </form>
   );
 }
 
@@ -98,6 +145,8 @@ function InquiryCard({ inquiry }: { inquiry: AdminInquiry }) {
           {inquiry.message}
         </p>
       )}
+
+      <ResponseForm inquiry={inquiry} />
 
       <form action={formAction} className="mt-4 flex flex-wrap items-center gap-2">
         <input type="hidden" name="inquiryId" value={inquiry.id} />
