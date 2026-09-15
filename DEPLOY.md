@@ -29,6 +29,17 @@ sudo -u postgres psql -c "CREATE USER rakuraku WITH PASSWORD 'ここに強いパ
 sudo -u postgres psql -c "CREATE DATABASE rakuraku OWNER rakuraku;"
 ```
 
+> **ポート番号を確認してください。**
+> 導入時に 5432 番が開発用の PGlite に使われていると、PostgreSQL は
+> 自動的に 5433 番に割り当てられます。確認方法:
+>
+> ```bash
+> grep "^port" /etc/postgresql/*/main/postgresql.conf
+> ```
+>
+> このサーバーでは **5433 番**になっています。`DATABASE_URL` のポートを
+> 合わせてください。
+
 ## 2. 環境変数を用意する
 
 ```bash
@@ -43,6 +54,11 @@ nano .env.production           # DATABASE_URL / AUTH_SECRET / AUTH_URL を埋め
 ```bash
 mkdir -p /home/admin/rakuraku-storage
 ```
+
+> **`AUTH_URL` は利用者が実際に開くURLと必ず一致させてください。**
+> ログインのCookieはホスト名に紐づきます。`AUTH_URL` が
+> `http://5.9.67.157:3000` なのに `http://localhost:3000` で開くと、
+> ログインは通るのにCookieが渡らず、ログイン画面に戻され続けます。
 
 ## 3. 起動する
 
