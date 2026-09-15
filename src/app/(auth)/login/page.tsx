@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LoginForm } from './login-form';
 import { GoogleButton } from '@/components/app/google-button';
+import { safeCallbackUrl } from '@/lib/auth/callback-url';
 
 export const metadata: Metadata = { title: 'ログイン' };
 
@@ -11,10 +12,7 @@ export default async function LoginPage({
   searchParams: Promise<{ callbackUrl?: string; invited?: string }>;
 }) {
   const { callbackUrl, invited } = await searchParams;
-  // Only accept same-site paths — an absolute URL here would be an open redirect.
-  const safeCallback = callbackUrl?.startsWith('/') && !callbackUrl.startsWith('//')
-    ? callbackUrl
-    : '/dashboard';
+  const safeCallback = safeCallbackUrl(callbackUrl);
 
   return (
     <>

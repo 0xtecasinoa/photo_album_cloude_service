@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authConfig } from './auth.config';
+import { safeCallbackUrl } from './lib/auth/callback-url';
 
 // Next 16 renamed the `middleware` file convention to `proxy`.
 const { auth } = NextAuth(authConfig);
@@ -45,7 +46,10 @@ export default auth((req) => {
 
     const loginUrl = new URL('/login', req.nextUrl.origin);
     // Send the user back where they were headed once they sign in.
-    loginUrl.searchParams.set('callbackUrl', pathname + req.nextUrl.search);
+    // safeCallbackUrl drops anything that could not be one of our routes, so a
+    // mistyped or mis-pasted URL does not survive the login round trip and
+    // dump the user on a 404 as if the sign-in itself had failed.
+    loginUrl.searchParams.set('callbackUrl', safeCallbackUrl(pathname + req.nextUrl.search));
     return NextResponse.redirect(loginUrl);
   }
 

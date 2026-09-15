@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { AuthError } from 'next-auth';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
+import { safeCallbackUrl } from '@/lib/auth/callback-url';
 import { signIn } from '@/auth';
 import { signUp, EmailTakenError } from '@/lib/auth/provision';
 
@@ -90,7 +91,11 @@ export async function signInAction(
 
   if (!parsed.success) return { fieldErrors: collectFieldErrors(parsed.error.issues) };
 
-  const callbackUrl = String(formData.get('callbackUrl') || '/dashboard');
+  /*
+   * 遷移先はフォームから届くため、ここでも必ず検証する。
+   * 画面側の検証だけでは、フォームを直接叩かれた場合に素通りしてしまう。
+   */
+  const callbackUrl = safeCallbackUrl(String(formData.get('callbackUrl') ?? ''));
 
   try {
     await signIn('credentials', { ...parsed.data, redirectTo: callbackUrl });
@@ -110,6 +115,6 @@ export async function signInAction(
 /** Google など外部プロバイダでのログイン。 */
 export async function oauthSignInAction(formData: FormData): Promise<void> {
   const provider = String(formData.get('provider') || 'google');
-  const callbackUrl = String(formData.get('callbackUrl') || '/dashboard');
+  const callbackUrl = safeCallbackUrl(String(formData.get('callbackUrl') ?? ''));
   await signIn(provider, { redirectTo: callbackUrl });
 }
