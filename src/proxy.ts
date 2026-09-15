@@ -32,10 +32,22 @@ function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
+/**
+ * アクセス記録のために、実際のパスをヘッダーに載せて渡す。
+ * サーバーコンポーネントからは要求 URL を直接読めないため。
+ */
+function withPathOn(req: { nextUrl: { pathname: string }; headers: Headers }): Headers {
+  const headers = new Headers(req.headers);
+  headers.set('x-pathname', req.nextUrl.pathname);
+  return headers;
+}
+
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
-  if (isPublic(pathname)) return NextResponse.next();
+  if (isPublic(pathname)) {
+    return NextResponse.next({ request: { headers: withPathOn(req) } });
+  }
 
   if (!req.auth) {
     // API calls get a machine-readable 401. Redirecting them to an HTML login
@@ -53,7 +65,7 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: withPathOn(req) } });
 });
 
 export const config = {

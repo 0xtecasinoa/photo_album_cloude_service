@@ -437,7 +437,31 @@ try {
     (await adminPage.locator(`text=${noticeTitle}`).count()) === 0,
   );
 
+
+  /*
+   * アクセスログは、許された1アドレスだけが見られる。
+   * 運営管理者であっても存在しない画面として扱う。
+   */
+  const logsRes = await adminPage.goto(`${BASE}/admin/access-logs`, { waitUntil: 'load' });
+  const logsLeaked = /閲覧数|利用者ごとの動き|アクセスの記録/.test(await adminPage.locator('body').innerText());
+  check(
+    '運営管理者でもアクセスログは見られない',
+    logsRes.status() === 404 && !logsLeaked,
+    `HTTP ${logsRes.status()}`,
+  );
+  await adminPage.goto(`${BASE}/admin`, { waitUntil: 'load' });
+  await adminPage.waitForTimeout(600);
+  check(
+    'アクセスログはメニューにも出ない',
+    (await adminPage.locator('nav a:has-text("アクセスログ")').count()) === 0,
+  );
+
   await adminCtx.close();
+
+  // 顧客からも見えないこと。
+  const custLogs = await page.goto(`${BASE}/admin/access-logs`, { waitUntil: 'load' });
+  check('顧客はアクセスログを開けない', custLogs.status() === 404, `HTTP ${custLogs.status()}`);
+
 
   // ---------- サービス紹介ページ ----------
   await page.goto(`${BASE}/`, { waitUntil: 'load' });

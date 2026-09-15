@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { SiteHeader } from '@/components/marketing/site-header';
+import { RecordAccess } from '@/components/app/record-access';
 import { getSessionContext } from '@/lib/auth/session';
 import { SiteFooter } from '@/components/marketing/site-footer';
 
@@ -13,6 +14,7 @@ export default async function Page() {
 
   return (
     <>
+      <RecordAccess />
       <SiteHeader user={headerUser} />
       <main>
         <section className="bg-brand pt-[150px] pb-20">

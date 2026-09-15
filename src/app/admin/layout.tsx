@@ -1,7 +1,9 @@
 import Link from 'next/link';
-import { ShieldCheck, LayoutDashboard, Building2, Users, Mail, Megaphone, KeyRound, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, Building2, Users, Mail, Megaphone, KeyRound, Activity, ArrowLeft } from 'lucide-react';
 import { requirePlatformAdmin } from '@/lib/auth/admin';
+import { isAccessLogViewer } from '@/lib/access-log/viewer';
 import { signOutAction } from '@/app/(app)/actions';
+import { RecordAccess } from '@/components/app/record-access';
 
 const NAV = [
   { href: '/admin', label: 'ダッシュボード', icon: LayoutDashboard },
@@ -12,6 +14,9 @@ const NAV = [
   { href: '/admin/logins', label: 'ログイン履歴', icon: KeyRound },
 ];
 
+/** アクセスログは閲覧を許された1名にだけ見せる。 */
+const VIEWER_ONLY_NAV = { href: '/admin/access-logs', label: 'アクセスログ', icon: Activity };
+
 /**
  * 運営管理コンソール。
  *
@@ -21,9 +26,13 @@ const NAV = [
  */
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await requirePlatformAdmin();
+  // 見られない人にメニューを出さない。存在を知らせないため。
+  const canSeeAccessLogs = await isAccessLogViewer();
+  const nav = canSeeAccessLogs ? [...NAV, VIEWER_ONLY_NAV] : NAV;
 
   return (
     <div className="min-h-dvh bg-[#0E1729]">
+      <RecordAccess />
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-8 gap-y-4 px-6 py-4">
           <p className="flex items-center gap-2.5 text-[15px] font-bold text-white">
@@ -32,7 +41,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </p>
 
           <nav className="flex flex-wrap items-center gap-1" aria-label="運営管理メニュー">
-            {NAV.map(({ href, label, icon: Icon }) => (
+            {nav.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}

@@ -1,4 +1,5 @@
 import { Sidebar } from '@/components/app/sidebar';
+import { RecordAccess } from '@/components/app/record-access';
 import { unreadNoticeCount } from '@/lib/queries/notifications';
 import { Topbar } from '@/components/app/topbar';
 import { requireSession } from '@/lib/auth/session';
@@ -11,6 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-dvh">
+      <RecordAccess />
       {/* The sidebar is fixed-width by design; it drops away below lg where the
           layout switches to a single column. */}
       <div className="hidden lg:flex">

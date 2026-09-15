@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { HardHat, Check, ShieldCheck, Share2, Clock, Building, Landmark } from 'lucide-react';
 import { SiteHeader } from '@/components/marketing/site-header';
+import { RecordAccess } from '@/components/app/record-access';
 import { getSessionContext } from '@/lib/auth/session';
 import { SiteFooter } from '@/components/marketing/site-footer';
 import { ChalkBoard } from '@/components/marketing/chalk-board';
@@ -188,6 +189,7 @@ export default async function LandingPage() {
 
   return (
     <>
+      <RecordAccess />
       <SiteHeader user={headerUser} />
 
       <main>

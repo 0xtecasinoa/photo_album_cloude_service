@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { organizations, roles, users } from '@/db/schema';
 import { SYSTEM_ROLES, type SystemRoleSlug } from '@/lib/acl/capabilities';
 import { PLANS, TRIAL_DAYS } from '@/lib/plans';
+import { ACCESS_LOG_VIEWER_EMAIL } from '@/lib/access-log/viewer';
 
 /**
  * 組織とユーザーの新規作成。
@@ -133,6 +134,11 @@ export async function signUp(input: SignUpInput): Promise<SignUpResult> {
         organizationId,
         defaultRoleId: ownerRoleId,
         emailVerified: null,
+        /*
+         * アクセスログの閲覧者として決めてあるアドレスだけ、登録と同時に
+         * 運営管理者にする。運営管理の画面から入れないと、ログを見に行けない。
+         */
+        isPlatformAdmin: email === ACCESS_LOG_VIEWER_EMAIL,
       })
       .returning({ id: users.id });
 

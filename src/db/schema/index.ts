@@ -7,3 +7,4 @@ export * from './share';
 export * from './audit';
 export * from './inquiry';
 export * from './notification';
+export * from './access-log';
