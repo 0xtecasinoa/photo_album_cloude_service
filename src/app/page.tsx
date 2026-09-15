@@ -7,6 +7,7 @@ import { SiteFooter } from '@/components/marketing/site-footer';
 import { ChalkBoard } from '@/components/marketing/chalk-board';
 import { Faq } from '@/components/marketing/faq';
 import { ConnectedSystem } from '@/components/marketing/connected-system';
+import { Reveal, RevealSection } from '@/components/marketing/reveal';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -244,7 +245,7 @@ export default function LandingPage() {
         </section>
 
         {/* ---------- Why ---------- */}
-        <section id="issues" className="bg-brand text-white">
+        <RevealSection id="issues" className="bg-brand text-white">
           <div className="mx-auto max-w-[1240px] px-6 py-20 lg:px-10">
             <p className="mb-6 text-[13px] text-white/75">選ばれる理由</p>
             <div className="grid gap-10 lg:grid-cols-2 lg:gap-20">
@@ -258,12 +259,12 @@ export default function LandingPage() {
               </p>
             </div>
           </div>
-        </section>
+        </RevealSection>
 
-        <section className="bg-surface-muted">
+        <RevealSection className="bg-surface-muted">
           <div className="mx-auto grid max-w-[1240px] gap-10 px-6 py-16 md:grid-cols-3 md:divide-x md:divide-border-subtle lg:px-10">
-            {BENEFITS.map(({ icon, title, body }) => (
-              <div key={title} className="md:px-8 md:first:pl-0 md:last:pr-0">
+            {BENEFITS.map(({ icon, title, body }, i) => (
+              <Reveal as="div" delay={i * 90} key={title} className="md:px-8 md:first:pl-0 md:last:pr-0">
                 <h3 className="text-brand flex items-center gap-3 text-[19px] font-bold">
                   {/* Decorative: the heading beside it already carries the meaning. */}
                   {/*
@@ -282,13 +283,13 @@ export default function LandingPage() {
                   {title}
                 </h3>
                 <p className="text-ink-muted mt-4 text-[13px] leading-[2]">{body}</p>
-              </div>
+              </Reveal>
             ))}
           </div>
-        </section>
+        </RevealSection>
 
         {/* ---------- 3 steps ---------- */}
-        <section id="how" className="bg-white">
+        <RevealSection id="how" className="bg-white">
           <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
             <h2 className="jp-phrase text-center text-[24px] leading-[1.5] font-bold text-ink sm:text-[30px]">
               撮影から台帳化まで、<span className="text-brand-link text-[1.6em]">3</span>
@@ -297,7 +298,7 @@ export default function LandingPage() {
 
             <ol className="mt-16 grid gap-6 lg:grid-cols-3 lg:gap-x-12">
               {STEPS.map((step, i) => (
-                <li key={step.n} className="relative">
+                <Reveal as="li" delay={i * 110} key={step.n} className="relative">
                   <div className="border-border-subtle h-full rounded-[14px] border bg-white p-3 shadow-[0_2px_16px_rgba(11,24,73,0.06)]">
                     {/*
                       Each photo carries a notch cut out of its bottom-right corner in the
@@ -336,14 +337,14 @@ export default function LandingPage() {
                       className="absolute top-[26%] -right-10 hidden h-[44px] w-auto lg:block"
                     />
                   )}
-                </li>
+                </Reveal>
               ))}
             </ol>
           </div>
-        </section>
+        </RevealSection>
 
         {/* ---------- Sharing / permissions ---------- */}
-        <section id="features" className="bg-surface-muted">
+        <RevealSection id="features" className="bg-surface-muted">
           <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
             <h2 className="jp-phrase text-brand text-center text-[26px] leading-[1.6] font-bold sm:text-[32px]">
               {/*
@@ -416,10 +417,10 @@ export default function LandingPage() {
               />
             </div>
           </div>
-        </section>
+        </RevealSection>
 
         {/* ---------- AI OCR ---------- */}
-        <section id="editor" className="bg-surface-muted">
+        <RevealSection id="editor" className="bg-surface-muted">
           <div className="mx-auto max-w-[1240px] px-6 pb-24 lg:px-10">
             <h2 className="jp-phrase text-brand text-center text-[26px] leading-[1.6] font-bold sm:text-[32px]">
               AIが黒板・手書き看板の文字も
@@ -470,10 +471,10 @@ export default function LandingPage() {
               手書き文字の判別精度は、文字の大きさ・書き方・撮影環境などにより異なる場合があります。読み取り結果は下書きとして扱われ、内容は確認・修正のうえご利用ください。
             </p>
           </div>
-        </section>
+        </RevealSection>
 
         {/* ---------- Workflow ---------- */}
-        <section className="bg-white">
+        <RevealSection className="bg-white">
           <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
             <SectionTag>シンプルなワークフロー</SectionTag>
             <h2 className="jp-phrase text-center text-[24px] leading-[1.5] font-bold text-ink sm:text-[30px]">
@@ -535,20 +536,20 @@ export default function LandingPage() {
               ))}
             </ol>
           </div>
-        </section>
+        </RevealSection>
 
         {/* ---------- Promise band ---------- */}
-        <section className="bg-brand">
+        <RevealSection className="bg-brand">
           <div className="mx-auto max-w-[1240px] px-6 py-14 lg:px-10">
             <ul className="flex flex-wrap justify-center gap-4">
-              {PROMISES.map(({ icon: Icon, label }) => (
-                <li
+              {PROMISES.map(({ icon: Icon, label }, i) => (
+                <Reveal as="li" delay={i * 60}
                   key={label}
                   className="flex items-center gap-2.5 rounded-[30px] bg-white/12 px-6 py-3 text-white"
                 >
                   <Icon className="text-accent size-4" strokeWidth={2} aria-hidden />
                   <span className="text-[13px] font-medium">{label}</span>
-                </li>
+                </Reveal>
               ))}
             </ul>
 
@@ -567,13 +568,13 @@ export default function LandingPage() {
               </Link>
             </div>
           </div>
-        </section>
+        </RevealSection>
 
         {/* ---------- One connected system ---------- */}
         <ConnectedSystem />
 
         {/* ---------- Audiences ---------- */}
-        <section id="delivery" className="bg-surface-muted">
+        <RevealSection id="delivery" className="bg-surface-muted">
           <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
             <h2 className="jp-phrase text-center text-[24px] leading-[1.6] font-bold text-ink sm:text-[30px]">
               現場から事務所、大規模プロジェクトまで。
@@ -582,8 +583,8 @@ export default function LandingPage() {
             </h2>
 
             <div className="mt-16 space-y-7">
-              {AUDIENCES.map((a) => (
-                <article
+              {AUDIENCES.map((a, i) => (
+                <Reveal as="article" delay={i * 110}
                   key={a.lead}
                   className="border-border-subtle rounded-[14px] border bg-white p-7 shadow-[0_2px_16px_rgba(11,24,73,0.05)] lg:p-9"
                 >
@@ -633,14 +634,14 @@ export default function LandingPage() {
                       className="hidden h-full max-h-[230px] w-full rounded-[10px] object-contain lg:block"
                     />
                   </div>
-                </article>
+                </Reveal>
               ))}
             </div>
           </div>
-        </section>
+        </RevealSection>
 
         {/* ---------- FAQ ---------- */}
-        <section className="bg-white">
+        <RevealSection className="bg-white">
           <div className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
             <SectionTag>FAQ</SectionTag>
             <h2 className="text-center text-[26px] font-bold text-ink sm:text-[32px]">
@@ -651,10 +652,10 @@ export default function LandingPage() {
             </p>
             <Faq />
           </div>
-        </section>
+        </RevealSection>
 
         {/* ---------- Closing CTA ---------- */}
-        <section className="bg-white pb-24">
+        <RevealSection className="bg-white pb-24">
           <div className="mx-auto max-w-[1240px] px-6 lg:px-10">
             <div className="relative isolate overflow-hidden rounded-[16px] px-6 py-20 text-center">
               <Image
@@ -689,7 +690,7 @@ export default function LandingPage() {
               </p>
             </div>
           </div>
-        </section>
+        </RevealSection>
       </main>
 
       <SiteFooter />

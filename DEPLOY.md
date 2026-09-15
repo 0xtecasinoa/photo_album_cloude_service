@@ -175,6 +175,12 @@ npm run build
 sudo systemctl restart rakuraku
 ```
 
+> **ビルドしたら必ず再起動してください。**
+> 稼働中のまま `npm run build` すると、実行中のプロセスが持っている
+> チャンクの一覧と `.next` の中身がずれ、画面が
+> `HTTP 500 /_next/static/chunks/...` で壊れます。
+> 再起動するまで直りません。
+
 ## 困ったとき
 
 ```bash
@@ -189,3 +195,4 @@ sudo systemctl status rakuraku      # 起動しているか
 | PDF 出力が失敗する | `CHROME_PATH` が違う、または Chrome 未導入 |
 | 看板の読み取りで項目が空になる | `npm run setup:ocr` を実行していない |
 | 起動直後に落ちる | `DATABASE_URL` が PGlite のままになっている |
+| `/_next/static/chunks/...` が 500 になる | ビルド後に再起動していない |
