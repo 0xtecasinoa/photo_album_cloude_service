@@ -5,6 +5,7 @@ import { HardHat, Check, ShieldCheck, Share2, Clock, Building, Landmark } from '
 import { SiteHeader } from '@/components/marketing/site-header';
 import { RecordAccess } from '@/components/app/record-access';
 import { getSessionContext } from '@/lib/auth/session';
+import { getPlatformAdmin } from '@/lib/auth/admin';
 import { SiteFooter } from '@/components/marketing/site-footer';
 import { ChalkBoard } from '@/components/marketing/chalk-board';
 import { Faq } from '@/components/marketing/faq';
@@ -185,7 +186,9 @@ export default async function LandingPage() {
   // ログイン中はヘッダーの「ログイン」を出さない。入っているのに出ていると、
   // もう一度ログインが必要だと受け取られる。
   const ctx = await getSessionContext();
-  const headerUser = ctx ? { name: ctx.user.name } : null;
+  const headerUser = ctx
+    ? { name: ctx.user.name, isPlatformAdmin: (await getPlatformAdmin()) !== null }
+    : null;
 
   return (
     <>

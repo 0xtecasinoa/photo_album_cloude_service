@@ -17,7 +17,13 @@ import { chromium } from 'playwright-core';
 const BASE = process.env.BASE ?? 'http://localhost:3000';
 const CHROME = process.env.CHROME_PATH ?? '/usr/bin/google-chrome';
 
-/** Seeded by `npm run db:seed`. */
+/**
+ * `npm run db:seed` で作られる確認用のアカウント。
+ *
+ * このスモークは、デモデータのある環境（開発用）に向けて実行してください。
+ * 本番にはデモデータを置かないため、そのまま流すとログインで止まります。
+ * BASE を変えるだけでなく、対象の環境にシードがあることも確かめてください。
+ */
 const LOGIN_EMAIL = process.env.SMOKE_EMAIL ?? 'taro.yamada@example.com';
 const LOGIN_PASSWORD = process.env.SMOKE_PASSWORD ?? 'password1234';
 const ADMIN_EMAIL = process.env.SMOKE_ADMIN_EMAIL ?? 'admin@rakuraku-daicho.jp';

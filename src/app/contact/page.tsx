@@ -4,6 +4,7 @@ import { RecordAccess } from '@/components/app/record-access';
 import { SiteFooter } from '@/components/marketing/site-footer';
 import { ContactForm } from './contact-form';
 import { getSessionContext } from '@/lib/auth/session';
+import { getPlatformAdmin } from '@/lib/auth/admin';
 import { isPlanKey, PLANS } from '@/lib/plans';
 
 export const metadata: Metadata = {
@@ -26,7 +27,9 @@ export default async function ContactPage({
   const ctx = await getSessionContext();
   // ログイン中はヘッダーの「ログイン」を出さない。入っているのに出ていると、
   // もう一度ログインが必要だと受け取られる。
-  const headerUser = ctx ? { name: ctx.user.name } : null;
+  const headerUser = ctx
+    ? { name: ctx.user.name, isPlatformAdmin: (await getPlatformAdmin()) !== null }
+    : null;
 
   return (
     <>

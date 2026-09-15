@@ -14,7 +14,7 @@ const LINKS = [
   { href: '#delivery', label: '電子納品' },
 ];
 
-export type SiteHeaderUser = { name: string } | null;
+export type SiteHeaderUser = { name: string; isPlatformAdmin?: boolean } | null;
 
 /**
  * 紹介ページのヘッダー。
@@ -49,6 +49,14 @@ export function SiteHeader({ user = null }: { user?: SiteHeaderUser }) {
           {user ? (
             <>
               <span className="text-[14px] text-white/80">{user.name} さん</span>
+              {user.isPlatformAdmin && (
+                <Link
+                  href="/admin"
+                  className="rounded-[30px] border border-white/70 px-5 py-2.5 text-[14px] font-medium text-white transition-colors hover:bg-white/15"
+                >
+                  運営管理
+                </Link>
+              )}
               <Link
                 href="/dashboard"
                 className="bg-accent hover:bg-accent-hover flex items-center gap-2 rounded-[30px] px-6 py-2.5 text-[14px] font-bold text-white transition-colors"
