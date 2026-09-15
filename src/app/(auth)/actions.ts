@@ -4,6 +4,13 @@ import { z } from 'zod';
 import { AuthError } from 'next-auth';
 import { isRedirectError } from 'next/dist/client/components/redirect-error';
 import { safeCallbackUrl } from '@/lib/auth/callback-url';
+import { headers } from 'next/headers';
+import {
+  checkLoginAllowed,
+  recordLoginFailure,
+  clearLoginFailures,
+  loginKeys,
+} from '@/lib/auth/rate-limit';
 import { signIn } from '@/auth';
 import { signUp, EmailTakenError } from '@/lib/auth/provision';
 
@@ -97,11 +104,39 @@ export async function signInAction(
    */
   const callbackUrl = safeCallbackUrl(String(formData.get('callbackUrl') ?? ''));
 
+  /*
+   * 公開したサーバーには自動の探索が来ます。総当たりを試されたときに
+   * 何回でも打てる状態だと、弱いパスワードのアカウントが破られます。
+   * メールアドレスと接続元の両方で数えます。
+   */
+  const h = await headers();
+  const forwarded = h.get('x-forwarded-for');
+  const ip = forwarded ? forwarded.split(',')[0]!.trim() : h.get('x-real-ip');
+  const keys = loginKeys(parsed.data.email, ip);
+
+  for (const key of keys) {
+    const limit = checkLoginAllowed(key);
+    if (!limit.allowed) {
+      const minutes = Math.ceil(limit.retryAfterSeconds / 60);
+      return {
+        error: `試行回数が多いため、${minutes}分ほどお待ちください。`,
+      };
+    }
+  }
+
   try {
     await signIn('credentials', { ...parsed.data, redirectTo: callbackUrl });
   } catch (error) {
-    if (isRedirectError(error)) throw error;
+    /*
+     * signIn は成功時にリダイレクト用の例外を投げる。
+     * これを失敗として数えると、正しく入れた人まで締め出す。
+     */
+    if (isRedirectError(error)) {
+      for (const key of keys) clearLoginFailures(key);
+      throw error;
+    }
     if (error instanceof AuthError) {
+      for (const key of keys) recordLoginFailure(key);
       // 理由は区別しない。どのアドレスが登録済みかを推測させないため。
       return { error: 'メールアドレスまたはパスワードが正しくありません。' };
     }
@@ -109,6 +144,7 @@ export async function signInAction(
     return { error: 'ログインに失敗しました。時間をおいて再度お試しください。' };
   }
 
+  for (const key of keys) clearLoginFailures(key);
   return {};
 }
 

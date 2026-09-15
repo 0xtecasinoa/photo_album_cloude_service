@@ -13,7 +13,15 @@ const { auth } = NextAuth(authConfig);
  * following 「お問い合わせ」 from the landing page and landing on a login screen is
  * a lost sale, not a security win.
  */
-const PUBLIC_EXACT = new Set(['/', '/contact', '/terms', '/privacy', '/forgot-password']);
+const PUBLIC_EXACT = new Set([
+  '/',
+  '/contact',
+  '/terms',
+  '/privacy',
+  '/forgot-password',
+  // クローラーが読む。ログインを求めると指定が伝わらない。
+  '/robots.txt',
+]);
 
 const PUBLIC_PREFIXES = [
   '/login',
