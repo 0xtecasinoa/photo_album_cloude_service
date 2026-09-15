@@ -341,8 +341,6 @@ try {
   await adminPage.waitForTimeout(2500);
   check('お知らせを配信できる', (await adminPage.locator('[role=status]').count()) > 0);
 
-  await adminCtx.close();
-
   // ---------- 通知が利用者に届く ----------
   await page.goto(`${BASE}/dashboard`, { waitUntil: 'load' });
   await page.waitForTimeout(1200);
@@ -350,17 +348,56 @@ try {
   check('ベルに未読件数が出る', /\d+件/.test(bell ?? ''), bell ?? '');
 
   await page.goto(`${BASE}/notifications`, { waitUntil: 'load' });
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(1200);
   check(
     '配信したお知らせが利用者に届く',
     (await page.locator(`text=${noticeTitle}`).count()) > 0,
   );
 
-  // 開いたら既読になり、ベルの数字が戻ること。
-  await page.goto(`${BASE}/dashboard`, { waitUntil: 'load' });
+  /*
+   * 開いた時点でベルが消えること。
+   * 以前は既読の処理が描画と並行に走っていたため、再読込するまで
+   * 数字が残っていた。
+   */
+  const bellOnPage = await page.locator('a[aria-label^="通知"]').getAttribute('aria-label');
+  check('開いた時点でベルが消える', !/\d+件/.test(bellOnPage ?? ''), bellOnPage ?? '');
+
+  // 開いている間は消えないこと（読む前に消えては困る）。
+  check(
+    '読んでいる最中は一覧に残る',
+    (await page.locator(`text=${noticeTitle}`).count()) > 0,
+  );
+
+  // 次に開いたときは新着から消え、確認済みへ移ること。
+  await page.goto(`${BASE}/notifications`, { waitUntil: 'load' });
   await page.waitForTimeout(1200);
-  const bellAfter = await page.locator('a[aria-label^="通知"]').getAttribute('aria-label');
-  check('開いたお知らせは既読になる', !/\d+件/.test(bellAfter ?? ''), bellAfter ?? '');
+  check(
+    '確認したお知らせは新着から消える',
+    (await page.locator(`text=${noticeTitle}`).count()) === 0,
+  );
+
+  await page.goto(`${BASE}/notifications?view=history`, { waitUntil: 'load' });
+  await page.waitForTimeout(1200);
+  check(
+    '確認したお知らせは履歴に残る',
+    (await page.locator(`text=${noticeTitle}`).count()) > 0,
+  );
+
+  // スモークが作ったお知らせを取り下げる。毎回残すと運用の邪魔になる。
+  await adminPage.goto(`${BASE}/admin/notifications`, { waitUntil: 'load' });
+  await adminPage.waitForTimeout(1000);
+  const smokeNotice = adminPage.locator('li').filter({ hasText: noticeTitle }).first();
+  await smokeNotice.getByRole('button', { name: /取り下げ/ }).click();
+  await adminPage.waitForTimeout(2500);
+  // 取り下げた結果は一覧を読み直して確かめる。
+  await adminPage.goto(`${BASE}/admin/notifications`, { waitUntil: 'load' });
+  await adminPage.waitForTimeout(1200);
+  check(
+    'スモークが作ったお知らせを片付けた',
+    (await adminPage.locator(`text=${noticeTitle}`).count()) === 0,
+  );
+
+  await adminCtx.close();
 
   // ---------- サービス紹介ページ ----------
   await page.goto(`${BASE}/`, { waitUntil: 'load' });

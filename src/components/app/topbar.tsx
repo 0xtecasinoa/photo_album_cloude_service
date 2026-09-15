@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { CircleHelp, Bell, LogOut } from 'lucide-react';
+import { CircleHelp, LogOut } from 'lucide-react';
+import { NoticeBell } from '@/components/app/notice-bell';
 import { signOutAction } from '@/app/(app)/actions';
 
 export type TopbarProps = {
@@ -20,23 +21,7 @@ export function Topbar({ userName, roleLabel, avatarUrl, notificationCount = 0 }
         <CircleHelp className="size-[22px]" strokeWidth={1.6} aria-hidden />
       </Link>
 
-      <Link
-        href="/notifications"
-        className="text-brand hover:bg-brand-tint relative grid size-10 place-items-center rounded-full transition-colors"
-        aria-label={
-          notificationCount > 0 ? `通知 ${notificationCount}件` : '通知'
-        }
-      >
-        <Bell className="size-[22px]" strokeWidth={1.6} aria-hidden />
-        {notificationCount > 0 && (
-          <span
-            className="bg-accent absolute top-1 right-1 grid size-[16px] place-items-center rounded-full text-[9px] font-bold text-white"
-            aria-hidden
-          >
-            {notificationCount > 9 ? '9+' : notificationCount}
-          </span>
-        )}
-      </Link>
+      <NoticeBell count={notificationCount} />
 
       <div className="flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element -- avatars are user-supplied remote URLs */}

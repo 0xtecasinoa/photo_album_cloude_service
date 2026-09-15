@@ -65,8 +65,21 @@ async function derivedAlerts(organizationId: string): Promise<Notice[]> {
   ];
 }
 
-/** 利用者に見せる通知一覧。運営のお知らせを上に、導出した警告を続けて返す。 */
-export async function listNotices(organizationId: string, userId: string): Promise<Notice[]> {
+/**
+ * 利用者に見せる通知一覧。
+ *
+ * 既定では未読のお知らせだけを返します。読んだものが残り続けると、
+ * 何度開いても同じ内容が並び、新しいものに気づけなくなるためです。
+ * 読んだものは履歴（includeRead）で確認できます。
+ *
+ * データから導いた警告は、読む読まないに関わらず常に出します。
+ * 写真を直すまで消えるべきではないためです。
+ */
+export async function listNotices(
+  organizationId: string,
+  userId: string,
+  options: { includeRead?: boolean } = {},
+): Promise<Notice[]> {
   const rows = await db
     .select({
       id: notifications.id,
@@ -89,16 +102,21 @@ export async function listNotices(organizationId: string, userId: string): Promi
     .orderBy(desc(notifications.createdAt))
     .limit(50);
 
-  const announcements: Notice[] = rows.map((r) => ({
-    id: r.id,
-    level: (r.level as NoticeLevel) ?? 'info',
-    title: r.title,
-    body: r.body,
-    linkUrl: r.linkUrl,
-    createdAt: r.createdAt,
-    read: r.readAt !== null,
-    source: 'announcement',
-  }));
+  const announcements: Notice[] = rows
+    .filter((r) => (options.includeRead ? r.readAt !== null : r.readAt === null))
+    .map((r) => ({
+      id: r.id,
+      level: (r.level as NoticeLevel) ?? 'info',
+      title: r.title,
+      body: r.body,
+      linkUrl: r.linkUrl,
+      createdAt: r.createdAt,
+      read: r.readAt !== null,
+      source: 'announcement',
+    }));
+
+  // 履歴を見ているときに、現在の警告まで混ぜると話が混ざる。
+  if (options.includeRead) return announcements;
 
   return [...announcements, ...(await derivedAlerts(organizationId))];
 }
