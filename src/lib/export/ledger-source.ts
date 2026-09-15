@@ -64,6 +64,8 @@ export async function loadLedgerData(
       title: p.title,
       shootingLocation: p.shootingLocation,
       controlValue: p.controlValue,
+      designValue: p.designValue,
+      measuredValue: p.measuredValue,
       contractorNote: p.contractorNote,
       isRepresentative: p.isRepresentative,
       isFrequencySubmission: p.isFrequencySubmission,

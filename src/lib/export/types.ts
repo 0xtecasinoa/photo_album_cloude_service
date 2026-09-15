@@ -43,7 +43,10 @@ export type LedgerPhoto = {
   workDetail?: string | null; // 細別
   title?: string | null;      // 写真タイトル
   shootingLocation?: string | null; // 撮影箇所
-  controlValue?: string | null;     // 施工管理値
+  controlValue?: string | null;
+  /** 出来形管理写真で対になる寸法。 */
+  designValue?: string | null;
+  measuredValue?: string | null;     // 施工管理値
   contractorNote?: string | null;   // 請負者説明文
   isRepresentative?: boolean;       // 代表写真
   isFrequencySubmission?: boolean;  // 提出頻度写真

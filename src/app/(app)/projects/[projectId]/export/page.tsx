@@ -42,7 +42,10 @@ export default async function ExportPage({
 
   return (
     <>
-      <PageHeader title={`${project.name}　出力設定`} />
+      <PageHeader
+        title="電子納品出力設定"
+        subtitle={project.name}
+      />
       <ExportPanel
         projectId={projectId}
         totalPhotos={data?.photos.length ?? 0}

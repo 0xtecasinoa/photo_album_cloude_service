@@ -107,6 +107,25 @@ export const photos = pgTable(
     title: text('title'),            // 写真タイトル
     shootingLocation: text('shooting_location'), // 撮影箇所
     controlValue: text('control_value'),         // 施工管理値
+    /** 設計寸法・実測寸法。出来形管理写真で対になって使われる。 */
+    designValue: text('design_value'),
+    measuredValue: text('measured_value'),
+
+    /** 現場側で付ける自由なラベル。絞り込みに使う。 */
+    tags: text('tags').array().notNull().default([]),
+
+    /**
+     * 看板の読み取り状況。
+     *   pending    … これから読む
+     *   processing … 読み取り中
+     *   done       … 読み取り済み
+     *   failed     … 読み取れなかった
+     *   skipped    … 読み取り対象外（言語データ未設置など）
+     */
+    ocrStatus: text('ocr_status').notNull().default('pending'),
+    ocrText: text('ocr_text'),
+    ocrConfidence: integer('ocr_confidence'),
+    ocrProcessedAt: timestamp('ocr_processed_at', { withTimezone: true }),
     contractorNote: text('contractor_note'),     // 請負者説明文
     /** 代表写真 */
     isRepresentative: boolean('is_representative').notNull().default(false),
@@ -123,6 +142,7 @@ export const photos = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    index('photos_ocr_idx').on(t.projectId, t.ocrStatus),
     index('photos_project_idx').on(t.projectId),
     index('photos_album_idx').on(t.albumId),
     index('photos_taken_at_idx').on(t.projectId, t.takenAt),

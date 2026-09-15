@@ -1,19 +1,34 @@
 'use client';
 
 import { useState } from 'react';
-import { RefreshCw, CircleAlert, FileDown, Loader2 } from 'lucide-react';
+import { RefreshCw, CircleAlert, FileDown, Loader2, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-type Format = 'pdf' | 'excel' | 'nouhin';
+type Format = 'pdf' | 'excel' | 'word' | 'nouhin';
 
-const FORMATS: { key: Format; name: string; description: string; accent: string; glyph: string }[] = [
+type FormatDef = {
+  key: Format;
+  name: string;
+  description: string;
+  accent: string;
+  glyph: string;
+  /** 「詳細を確認」で開く説明。どれを選べばよいか迷わせないためのもの。 */
+  detail: string[];
+};
+
+const FORMATS: FormatDef[] = [
   {
     key: 'pdf',
     name: 'PDF 形式（提出・印刷用）',
     description: '国土交通省・自治体提出用の高機能A4ファイル',
     accent: '#D93025',
     glyph: 'PDF',
+    detail: [
+      '1ページあたり 1 / 3 / 4 / 6 枚から体裁を選べます。',
+      '写真・撮影年月日・工種・撮影箇所・請負者説明文を1枚ずつ並べます。',
+      'そのまま印刷して提出できます。受け取った側では編集できません。',
+    ],
   },
   {
     key: 'excel',
@@ -21,6 +36,23 @@ const FORMATS: { key: Format; name: string; description: string; accent: string;
     description: '発注者指定フォームの流用・再編集可能な帳票',
     accent: '#1D6F42',
     glyph: 'X',
+    detail: [
+      '写真を貼り込んだ一覧表として出力します。',
+      '発注者指定の雛形がある場合は、{{工事名}} 形式の差し込みにも対応します。',
+      '受け取った側で並べ替えや列の追加ができます。',
+    ],
+  },
+  {
+    key: 'word',
+    name: 'WORD 形式（.DOCX）',
+    description: '説明文書メインの報告書作成向け',
+    accent: '#2B579A',
+    glyph: 'W',
+    detail: [
+      '写真の下に管理項目の表と説明文を置いた、文書としての体裁で出力します。',
+      '先方が文章を書き足す前提の報告書に向いています。',
+      '指定枚数ごとに改ページします。',
+    ],
   },
   {
     key: 'nouhin',
@@ -28,6 +60,11 @@ const FORMATS: { key: Format; name: string; description: string; accent: string;
     description: 'PHOTO.XML・PIC/DRA 構成での成果品出力',
     accent: '#1E3A8B',
     glyph: 'ZIP',
+    detail: [
+      'デジタル写真管理情報基準（令和5年3月）に沿った ZIP を作ります。',
+      'PHOTO/PHOTO.XML は Shift_JIS、写真は PHOTO/PIC に P0000001.JPG 形式で入ります。',
+      '原本をそのまま収めます。署名が検証できない写真があると出力を止めます。',
+    ],
   },
 ];
 
@@ -48,13 +85,17 @@ export function ExportPanel({
   canExportPdf: boolean;
   canExportNouhin: boolean;
 }) {
-  const allowed = FORMATS.filter((f) =>
-    f.key === 'pdf' ? canExportPdf : f.key === 'excel' ? canExportExcel : canExportNouhin,
-  );
+  const allowed = FORMATS.filter((f) => {
+    if (f.key === 'excel') return canExportExcel;
+    if (f.key === 'nouhin') return canExportNouhin;
+    // Word は PDF と同じ「提出物の体裁を作る」権限で扱う。
+    return canExportPdf;
+  });
   const [format, setFormat] = useState<Format>(allowed[0]?.key ?? 'pdf');
   const [perPage, setPerPage] = useState(4);
   // 民間工事では適合チェックの対象外なので、既定を OFF にしておく。
   const [strictMode, setStrictMode] = useState(isPublicWorks);
+  const [openDetail, setOpenDetail] = useState<Format | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -177,34 +218,69 @@ export function ExportPanel({
       <section className="mt-12">
         <h2 className="text-brand text-[17px] font-bold">1: 出力形式とページ体裁の選択</h2>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-3" role="radiogroup" aria-label="出力形式">
+        <div
+          className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-4"
+          role="radiogroup"
+          aria-label="出力形式"
+        >
           {allowed.map((f) => (
-            <button
+            <div
               key={f.key}
-              type="button"
-              role="radio"
-              aria-checked={format === f.key}
-              onClick={() => setFormat(f.key)}
               className={cn(
-                'relative rounded-[10px] border px-7 py-8 text-left transition-colors',
-                format === f.key ? 'border-brand bg-brand-tint/70' : 'border-border-subtle bg-white hover:border-brand/40',
+                'relative flex flex-col rounded-[10px] border transition-colors',
+                format === f.key
+                  ? 'border-brand bg-brand-tint/70'
+                  : 'border-border-subtle bg-white hover:border-brand/40',
               )}
             >
-              {format === f.key && (
-                <span className="bg-brand absolute top-5 right-5 grid size-[22px] place-items-center rounded-[4px] text-white">
-                  <svg viewBox="0 0 14 14" className="size-3.5" aria-hidden>
-                    <path d="M2 7.5 5.5 11 12 3.5" fill="none" stroke="currentColor" strokeWidth="2.2"
-                      strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={format === f.key}
+                onClick={() => setFormat(f.key)}
+                className="flex-1 px-7 pt-8 pb-5 text-left"
+              >
+                {format === f.key && (
+                  <span className="bg-brand absolute top-5 right-5 grid size-[22px] place-items-center rounded-[4px] text-white">
+                    <svg viewBox="0 0 14 14" className="size-3.5" aria-hidden>
+                      <path d="M2 7.5 5.5 11 12 3.5" fill="none" stroke="currentColor" strokeWidth="2.2"
+                        strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                )}
+                <span className="grid size-[62px] place-items-center rounded-[10px] text-[17px] font-bold text-white"
+                      style={{ backgroundColor: f.accent }} aria-hidden>
+                  {f.glyph}
                 </span>
-              )}
-              <span className="grid size-[62px] place-items-center rounded-[10px] text-[17px] font-bold text-white"
-                    style={{ backgroundColor: f.accent }} aria-hidden>
-                {f.glyph}
-              </span>
-              <span className="mt-6 block text-[15px] font-bold text-ink">{f.name}</span>
-              <span className="text-ink-muted mt-3 block text-[13px] leading-[1.8]">{f.description}</span>
-            </button>
+                <span className="mt-6 block text-[15px] font-bold text-ink">{f.name}</span>
+                <span className="text-ink-muted mt-3 block text-[13px] leading-[1.8]">{f.description}</span>
+              </button>
+
+              <div className="border-border-subtle border-t px-7 py-3">
+                <button
+                  type="button"
+                  onClick={() => setOpenDetail(openDetail === f.key ? null : f.key)}
+                  aria-expanded={openDetail === f.key}
+                  className="text-brand-link flex w-full items-center justify-between text-[12px] font-bold"
+                >
+                  詳細を確認
+                  <ChevronRight
+                    className={cn('size-4 transition-transform', openDetail === f.key && 'rotate-90')}
+                    aria-hidden
+                  />
+                </button>
+                {openDetail === f.key && (
+                  <ul className="text-ink-muted mt-3 space-y-2 text-[12px] leading-[1.8]">
+                    {f.detail.map((d) => (
+                      <li key={d} className="flex gap-2">
+                        <span aria-hidden>・</span>
+                        <span>{d}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       </section>

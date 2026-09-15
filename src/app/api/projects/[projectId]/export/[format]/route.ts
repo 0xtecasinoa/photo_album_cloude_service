@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { exportLedgerExcel } from '@/lib/export/excel';
 import { exportLedgerPdf } from '@/lib/export/pdf';
+import { exportLedgerWord } from '@/lib/export/word';
 import { buildDenshiNouhinZip, NonCompliantPhotoError, MissingPhotoFileError } from '@/lib/export/denshi-nouhin';
 import { loadLedgerData } from '@/lib/export/ledger-source';
 import { getSessionContext } from '@/lib/auth/session';
@@ -14,7 +15,7 @@ export const runtime = 'nodejs';
 /** PDF は Chromium を起動するため、既定のタイムアウトでは足りないことがある。 */
 export const maxDuration = 120;
 
-type Format = 'excel' | 'pdf' | 'nouhin';
+type Format = 'excel' | 'pdf' | 'word' | 'nouhin';
 
 const SPEC: Record<Format, { capability: Capability; contentType: string; extension: string; audit: 'export.excel' | 'export.pdf' | 'export.denshi_nouhin' }> = {
   excel: {
@@ -27,6 +28,13 @@ const SPEC: Record<Format, { capability: Capability; contentType: string; extens
     capability: 'export.pdf',
     contentType: 'application/pdf',
     extension: 'pdf',
+    audit: 'export.pdf',
+  },
+  word: {
+    // Word は体裁を整えた提出物なので、PDF と同じ権限で扱う。
+    capability: 'export.pdf',
+    contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    extension: 'docx',
     audit: 'export.pdf',
   },
   nouhin: {
@@ -107,6 +115,8 @@ export async function GET(
       body = await exportLedgerExcel(data, { photosPerPage });
     } else if (format === 'pdf') {
       body = await exportLedgerPdf(data, { photosPerPage });
+    } else if (format === 'word') {
+      body = await exportLedgerWord(data, { photosPerPage });
     } else {
       body = await buildDenshiNouhinZip(data, { enforceCompliance: !internalMode });
     }
