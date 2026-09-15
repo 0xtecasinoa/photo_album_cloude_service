@@ -41,10 +41,19 @@ export default async function ProjectPhotosPage({
 
   const [photos, facets, shareLinks] = await Promise.all([
     listPhotos(projectId, {
+      query: sp.q,
       workType: sp.workType,
+      workKind: sp.workKind,
+      workDetail: sp.workDetail,
       category: sp.category,
       integrityStatus: sp.integrity as never,
       uploadSource: sp.source as never,
+      ocrStatus: sp.ocr as never,
+      tag: sp.tag,
+      sort: sp.sort as never,
+      // 入力は日本時間の日付として扱う。UTC で解釈すると9時間ずれる。
+      from: sp.from ? new Date(`${sp.from}T00:00:00+09:00`) : undefined,
+      to: sp.to ? new Date(`${sp.to}T23:59:59+09:00`) : undefined,
     }),
     photoFacets(projectId),
     listShareLinks(organization.id, projectId),

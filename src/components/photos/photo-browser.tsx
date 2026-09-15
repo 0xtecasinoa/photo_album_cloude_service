@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { LayoutGrid, List, Trash2, Loader2, ImageOff } from 'lucide-react';
+import { Trash2, Loader2, ImageOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FilterRail, type Facets } from './filter-rail';
+import { PhotoToolbar } from './photo-toolbar';
+import { TagDialog } from './tag-dialog';
 import { PhotoCard } from './photo-card';
 import { deletePhotosAction } from '@/app/(app)/projects/[projectId]/actions';
 import type { PhotoListItem } from '@/lib/queries/photos';
@@ -51,36 +53,7 @@ export function PhotoBrowser({
 
   return (
     <>
-      <div className="border-border-subtle border-b px-8 py-[13px] xl:px-[31px]">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <p className="text-ink-muted text-[13px]">
-            全 <span className="tabular font-bold text-ink">{facets.total.toLocaleString('ja-JP')}</span> 枚
-            {photos.length !== facets.total && (
-              <>（表示 <span className="tabular">{photos.length.toLocaleString('ja-JP')}</span> 枚）</>
-            )}
-          </p>
-
-          <div className="flex flex-wrap items-end gap-5">
-            <div>
-              <p className="text-brand mb-1.5 text-[11px] font-bold">表示</p>
-              <div className="border-border flex h-[30px] overflow-hidden rounded-[6px] border">
-                <button type="button" onClick={() => setView('grid')} aria-pressed={view === 'grid'}
-                  aria-label="グリッド表示"
-                  className={cn('grid w-10 place-items-center transition-colors',
-                    view === 'grid' ? 'bg-brand text-white' : 'text-ink-muted bg-white')}>
-                  <LayoutGrid className="size-4" aria-hidden />
-                </button>
-                <button type="button" onClick={() => setView('list')} aria-pressed={view === 'list'}
-                  aria-label="リスト表示"
-                  className={cn('border-border grid w-10 place-items-center border-l transition-colors',
-                    view === 'list' ? 'bg-brand text-white' : 'text-ink-muted bg-white')}>
-                  <List className="size-4" aria-hidden />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PhotoToolbar total={facets.total} view={view} onViewChange={setView} />
 
       <div className="flex gap-6 px-8 pt-6 xl:px-[31px]">
         <div className="hidden lg:block">
@@ -121,6 +94,17 @@ export function PhotoBrowser({
                   </span>
                 </label>
 
+                <div className="flex flex-wrap items-center gap-2">
+                {selected.size > 0 && (
+                  <TagDialog
+                    projectId={projectId}
+                    photoIds={[...selected]}
+                    onDone={() => {
+                      setSelected(new Set());
+                      router.refresh();
+                    }}
+                  />
+                )}
                 {canDelete && selected.size > 0 && (
                   <button
                     type="button"
@@ -132,6 +116,7 @@ export function PhotoBrowser({
                     選択した写真を削除
                   </button>
                 )}
+                </div>
               </div>
 
               <div className={cn('grid gap-x-[43px] gap-y-[25px]',

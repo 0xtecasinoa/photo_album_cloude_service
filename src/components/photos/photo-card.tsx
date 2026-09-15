@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Camera, Upload, Smartphone, CircleCheck, ShieldAlert, ImageOff } from 'lucide-react';
+import { Camera, Upload, Smartphone, CircleCheck, ShieldAlert, ImageOff, Sparkles } from 'lucide-react';
 import { cn, formatShotAt } from '@/lib/utils';
 import type { PhotoListItem } from '@/lib/queries/photos';
 
@@ -98,11 +98,24 @@ export function PhotoCard({
             <SourceIcon className="size-3.5" aria-hidden />
             {source.label}
           </span>
-          <span className={cn('inline-flex items-center gap-1.5 font-medium', integrity.tone)}>
-            {photo.integrityStatus === 'valid'
-              ? <CircleCheck className="size-3.5" aria-hidden />
-              : <ShieldAlert className="size-3.5" aria-hidden />}
-            {integrity.label}
+          <span className="flex items-center gap-2.5">
+            {/* 看板を読み取ってあるか。未解析だと台帳の項目が空のままになる。 */}
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 font-medium',
+                photo.ocrStatus === 'done' ? 'text-brand-link' : 'text-ink-faint',
+              )}
+              title={photo.ocrStatus === 'done' ? '看板の文字を読み取り済み' : '看板をまだ読み取っていません'}
+            >
+              <Sparkles className="size-3.5" aria-hidden />
+              {photo.ocrStatus === 'done' ? 'AI解析済み' : '未解析'}
+            </span>
+            <span className={cn('inline-flex items-center gap-1.5 font-medium', integrity.tone)}>
+              {photo.integrityStatus === 'valid'
+                ? <CircleCheck className="size-3.5" aria-hidden />
+                : <ShieldAlert className="size-3.5" aria-hidden />}
+              {integrity.label}
+            </span>
           </span>
         </div>
 
@@ -111,9 +124,21 @@ export function PhotoCard({
           {[photo.category, photo.workDetail].filter(Boolean).join('　') || '（区分未設定）'}
         </p>
 
-        {(photo.title || photo.shootingLocation || photo.contractorNote) && (
+        {photo.tags.length > 0 && (
+          <ul className="mt-2.5 flex flex-wrap gap-1.5">
+            {photo.tags.map((t) => (
+              <li key={t} className="bg-brand-tint text-brand rounded-[30px] px-2 py-0.5 text-[10px]">
+                {t}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {(photo.title || photo.shootingLocation || photo.contractorNote || photo.designValue) && (
           <div className="bg-success-tint mt-3 rounded-[6px] px-2.5 py-2">
-            <p className="text-success text-xs font-bold">写真情報</p>
+            <p className="text-success text-xs font-bold">
+              {photo.ocrStatus === 'done' ? 'AI抽出データ' : '写真情報'}
+            </p>
             <dl className="mt-1 space-y-0.5 text-[11px] text-ink">
               {photo.title && (
                 <div className="flex gap-1">
@@ -123,6 +148,16 @@ export function PhotoCard({
               {photo.shootingLocation && (
                 <div className="flex gap-1">
                   <dt className="shrink-0">箇所：</dt><dd className="truncate">{photo.shootingLocation}</dd>
+                </div>
+              )}
+              {photo.designValue && (
+                <div className="flex gap-1">
+                  <dt className="shrink-0">設計：</dt><dd className="truncate">{photo.designValue}</dd>
+                </div>
+              )}
+              {photo.measuredValue && (
+                <div className="flex gap-1">
+                  <dt className="shrink-0">実測：</dt><dd className="truncate">{photo.measuredValue}</dd>
                 </div>
               )}
               {photo.contractorNote && (
