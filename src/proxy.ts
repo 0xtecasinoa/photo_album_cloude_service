@@ -29,6 +29,7 @@ const PUBLIC_PREFIXES = [
   '/invite', // 招待リンク — トークンで認可するためログイン不要
   '/share', // expiring external share links — authorised by token, not session
   '/api/share', // the images those links serve — same token, no session
+  '/api/access-log', // 未ログインの閲覧も記録するため、セッションは求めない
   '/api/auth',
   '/_next',
   '/favicon',
