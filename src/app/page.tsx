@@ -243,8 +243,14 @@ export default async function LandingPage() {
               </div>
             </div>
 
+            {/*
+              元データを直接読む。変換した webp を別に持つと、元を差し替えても
+              表示が変わらず、差し替えたつもりで反映されない事故になる。
+              形式と寸法の最適化は Next の画像処理が行うため、
+              配信されるのは webp のまま。
+            */}
             <Image
-              src="/brand/hero-product.webp"
+              src="/brand/image 2.png"
               alt="スマートフォンの電子小黒板とパソコンの工事写真台帳が、クラウドで連携している様子"
               width={768}
               height={512}
